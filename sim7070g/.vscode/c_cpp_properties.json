@@ -8,7 +8,8 @@
                 "${config:idf.espIdfPathWin}/components/**",
                 "${config:idf.espAdfPath}/components/**",
                 "${config:idf.espAdfPathWin}/components/**",
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "C:\\Users\\epont\\source\\repos\\BK-SIM7070G_Project\\sim7070g\\main\\include"
             ],
             "browse": {
                 "path": [
