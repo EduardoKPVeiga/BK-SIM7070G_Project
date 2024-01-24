@@ -40,6 +40,7 @@ bool SendCMD(int max_resp_time)
     uart_wait_tx_done(uart_sim7070g, 100);
     ESP_ERROR_CHECK(uart_flush(uart_sim7070g));
 
+    // Wait for a response
     int attempts = (max_resp_time * 1000) / DELAY_SEND;
     char msg_received_LOG[MSG_RECEIVED_BUFF_SIZE] = {0};
     uint16_t length = 0;
