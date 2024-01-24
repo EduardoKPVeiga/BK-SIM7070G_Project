@@ -3,15 +3,14 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "pins.h"
 #include "str.h"
+#include "uart_sim7070g.h"
+#include "string.h"
 
-#define MESSAGE_BUFF_MAX_SIZE 559
-
-#define BEGIN_CMD "AT"
-#define END_CMD "<CR>"
+#define BEGIN_CMD "AT\0"
+#define END_CMD "\0\r\n"
 #define RESP_DELIMITER "<CR><LF>"
 #define CMD_DELIMITER ";"
 #define VALUE_DELIMITER ","
@@ -19,6 +18,7 @@
 #define READ_CMD "?"
 #define WRITE_CMD "="
 
+#define ECHO_OFF "AT\0E0"
 #define SMCONF "+SMCONF"   // Set MQTT Parameter
 #define SMSSL "+SMSSL"     // Select SSL Configure
 #define SMCONN "+SMCONN"   // MQTT Connection
@@ -31,7 +31,7 @@
 #define URL "URL"
 #define KEEPTIME "KEEPTIME"
 #define USERNAME "USERNAME"
-#define PASSWORD "PASSWORD"
+#define PASSWORD "PASSWORD",
 #define CLEANSS "CLEANSS"
 #define QOS "QOS"
 #define TOPIC "TOPIC"
@@ -43,9 +43,6 @@
 // Responses
 #define RESP_OK "OK"
 #define RESP_ERROR "ERROR"
-
-extern char message_buff[MESSAGE_BUFF_MAX_SIZE];
-extern uint16_t message_pointer_pos;
 
 /*
 AT+SMCONF="CLIENTID","id"
@@ -61,42 +58,46 @@ AT+SMCONF="ASYNCMODE",1
 */
 
 /**
- * Initialize UART
- */
-void UARTSim7070gInit();
-
-/**
- * Send the message buffer to SIM7070G
- * @return true if successful, false otherwise
- */
-bool SendCMD();
-
-/**
  * Begin command line
+ * @author Eduardo Veiga
+ * @return void
  */
 void BeginCMD();
 
 /**
  * End command line
+ * @author Eduardo Veiga
+ * @return void
  */
 void EndCMD();
 
 /**
  * Put quotations marks in the message
+ * @author Eduardo Veiga
+ * @return void
  */
 void QuotationMarks();
 
 /**
  * Put ',' in the message
+ * @author Eduardo Veiga
+ * @return void
  */
 void ValueDelimite();
+
+/**
+ * Put the character '=' in the message
+ * @author Eduardo Veiga
+ * @return void
+ */
+void WriteCMD();
 
 /*
  * Connect to MQTT broker
  * @author Eduardo Veiga
- * @return null
+ * @return true if successful, false otherwise
  */
-void MQTTConnect();
+bool MQTTConnect();
 
 /*
  * Connect to MQTT broker
@@ -109,29 +110,47 @@ void MQTTDisconnect();
  * Subscribe to MQTT broker topic
  * @author Eduardo Veiga
  * @param topic: char*
- * @param qos: uint8_t
+ * @return true if successful, false otherwise
  */
-void MQTTSubscribeTopic(char *topic, uint8_t qos);
+bool MQTTSubscribeTopic(const char *topic);
 
 /*
  * Set the client ID
  * @author Eduardo Veiga
- * @param id: uint8_t
+ * @param id: char*
+ * @param size_id: int
+ * @return true if successful, false otherwise
  */
-void SetClientID(uint8_t id);
+bool SetClientID(char *id, int size_id);
 
 /*
  * Set the URL for connection
  * @author Eduardo Veiga
- * @param address: char*
- * @param port: uint16_t
+ * @param address: const char*
+ * @param port: const char*
  */
-void SetBrokerURL(char *address, uint16_t port);
+bool SetBrokerURL(const char *address, const char *port);
 
 /**
  * Read command, MQTT parameters
+ * @author Eduardo Veiga
  * @return void
  */
-void TestCMDMQTTParameters();
+bool TestCMDMQTTParameters();
+
+/**
+ * Disable echo mode
+ * @return true if successful, false otherwise
+ * @author Eduardo Veiga
+ */
+bool EchoBackOff();
+
+/**
+ * Sends a ping message to another destination
+ * @author Eduardo Veiga
+ * @param ipaddress: const char
+ * @return true if successful, false otherwise
+ */
+bool PingIPV4(const char *ipaddress);
 
 #endif

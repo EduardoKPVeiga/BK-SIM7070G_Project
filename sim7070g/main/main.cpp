@@ -2,41 +2,66 @@
 #include "freertos/FreeRTOS.h"
 #include "sim7070g_commands.h"
 #include "esp_log.h"
+#include "uart_sim7070g.h"
 
-static const char TAG[] = "main";
-
-const uart_port_t uart_0 = UART_NUM_0;
+static const char TAG[] = "Main";
 
 extern "C"
 {
     void app_main(void)
     {
         esp_log_level_set("*", ESP_LOG_INFO);
-
         ESP_LOGI(TAG, "Application Init!");
 
         PinsSetup();
-
         ESP_LOGI(TAG, "Pins Setup.");
 
-        PWRKEYPulse();
-
-        ESP_LOGI(TAG, "SIM7070G Init.");
-
+        // xTaskCreatePinnedToCore(&UartTask, "Uart Task", UART_TASK_STACK_SIZE, NULL, UART_TASK_PRIORITY, NULL, UART_TASK_CORE_ID);
+        // ESP_LOGI(TAG, "Uart Task created.");
         UARTSim7070gInit();
         ESP_LOGI(TAG, "UART SIM7070G Init.");
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
 
-        while (1)
+        PWRKEYPulse();
+        ESP_LOGI(TAG, "SIM7070G Init.");
+
+        while (!EchoBackOff())
         {
-            TestCMDMQTTParameters();
-            char msg[message_pointer_pos + 1] = {0};
-            for (int i = 0; i < message_pointer_pos; i++)
-            {
-                msg[i] = message_buff[i];
-            }
-            msg[message_pointer_pos] = '\0';
-            ESP_LOGI(TAG, "%s", msg);
-            vTaskDelay(5000 / portTICK_PERIOD_MS);
+            ESP_LOGI(TAG, "Sending echo command...");
+            vTaskDelay(10 / portTICK_PERIOD_MS);
         }
+        ESP_LOGI(TAG, "Echo mode disabled.");
+
+        while (!SetClientID("15", 2))
+        {
+            ESP_LOGI(TAG, "Sending client ID...");
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+        }
+        ESP_LOGI(TAG, "Set client ID.");
+
+        while (!SetBrokerURL("172.104.199.107", "1883"))
+        {
+            ESP_LOGI(TAG, "Sending broker URL...");
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+        }
+        ESP_LOGI(TAG, "Set broker URL.");
+
+        while (!MQTTSubscribeTopic("Sim7070"))
+        {
+            ESP_LOGI(TAG, "Subscrinbing MQTT topic...");
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+        }
+        ESP_LOGI(TAG, "Topic subscribe.");
+
+        while (!TestCMDMQTTParameters())
+        {
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+        }
+
+        while (!MQTTConnect())
+        {
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+        }
+        ESP_LOGI(TAG, "Connected to broker.");
     }
 }

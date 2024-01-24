@@ -13,8 +13,21 @@
 #define RTS1 GPIO_NUM_14
 #define PWRKEY GPIO_NUM_27
 
+#define PWRKEY_T_ON 1000 / portTICK_PERIOD_MS      // ms
+#define PWRKEY_T_ON_UART 3000 / portTICK_PERIOD_MS // ms
+
+/**
+ * Setup pins used
+ * @author Eduardo veiga
+ * @return void
+ */
 void PinsSetup();
 
+/**
+ * Initialize SIM7070G with a pulse
+ * @author Eduardo veiga
+ * @return void
+ */
 void PWRKEYPulse();
 
 #endif
