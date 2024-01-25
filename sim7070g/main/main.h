@@ -8,7 +8,13 @@
 #include "sim7070g_commands.h"
 #include "esp_log.h"
 #include "uart_sim7070g.h"
+#include <stdlib.h>
 
 void MQTTInit();
+void GNSSInit();
+double GetLatitude();
+double GetLongitude();
+double GetAltitude();
+int GetSatellitesInView();
 
 #endif

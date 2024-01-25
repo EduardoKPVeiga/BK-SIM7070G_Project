@@ -250,6 +250,162 @@ bool TestCMDMQTTParameters()
     EndCMD();
     return SendCMD(30);
 }
+
+bool SetAsyncmode(bool mode)
+{
+    // AT+SMCONF="ASYNCMODE",1
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(SMCONF); i++)
+    {
+        message_buff[message_pointer_pos] = SMCONF[i];
+        message_pointer_pos++;
+    }
+
+    WriteCMD();
+
+    QuotationMarks();
+    for (int i = 0; i < SIZE(ASYNCMODE); i++)
+    {
+        message_buff[message_pointer_pos] = ASYNCMODE[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
+
+    ValueDelimiter();
+
+    message_buff[message_pointer_pos] = mode ? '1' : '0';
+    message_pointer_pos++;
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool SetSubhex(bool data_hex)
+{
+    // AT+SMCONF="SUBHEX",1
+    BeginCMD();
+    for (int i = 0; i < SIZE(SMCONF); i++)
+    {
+        message_buff[message_pointer_pos] = SMCONF[i];
+        message_pointer_pos++;
+    }
+
+    WriteCMD();
+
+    QuotationMarks();
+    for (int i = 0; i < SIZE(SUBHEX); i++)
+    {
+        message_buff[message_pointer_pos] = SUBHEX[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
+
+    ValueDelimiter();
+
+    message_buff[message_pointer_pos] = data_hex ? '1' : '0';
+    message_pointer_pos++;
+    EndCMD();
+    return SendCMD();
+}
+
+bool SetRetain(bool mode)
+{
+    // AT+SMCONF="RETAIN",1
+    BeginCMD();
+    for (int i = 0; i < SIZE(SMCONF); i++)
+    {
+        message_buff[message_pointer_pos] = SMCONF[i];
+        message_pointer_pos++;
+    }
+
+    WriteCMD();
+
+    QuotationMarks();
+    for (int i = 0; i < SIZE(RETAIN); i++)
+    {
+        message_buff[message_pointer_pos] = RETAIN[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
+
+    ValueDelimiter();
+
+    message_buff[message_pointer_pos] = mode ? '1' : '0';
+    message_pointer_pos++;
+    EndCMD();
+    return SendCMD();
+}
+
+bool SetMessageDetails(const char *details)
+{
+    // AT+SMCONF="MESSAGE","will message"
+    BeginCMD();
+    for (int i = 0; i < SIZE(SMCONF); i++)
+    {
+        message_buff[message_pointer_pos] = SMCONF[i];
+        message_pointer_pos++;
+    }
+
+    WriteCMD();
+
+    QuotationMarks();
+    for (int i = 0; i < SIZE(MESSAGE); i++)
+    {
+        message_buff[message_pointer_pos] = MESSAGE[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
+
+    ValueDelimiter();
+
+    QuotationMarks();
+    for (int i = 0; i < strlen(details); i++)
+    {
+        message_buff[message_pointer_pos] = details[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool SetQOS(int level)
+{
+    // AT+SMCONF="QOS",1
+    BeginCMD();
+    for (int i = 0; i < SIZE(SMCONF); i++)
+    {
+        message_buff[message_pointer_pos] = SMCONF[i];
+        message_pointer_pos++;
+    }
+
+    WriteCMD();
+
+    QuotationMarks();
+    for (int i = 0; i < SIZE(QOS); i++)
+    {
+        message_buff[message_pointer_pos] = QOS[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
+
+    ValueDelimiter();
+
+    if (level == 0)
+        message_buff[message_pointer_pos] = '0';
+    else if (level == 1)
+        message_buff[message_pointer_pos] = '1';
+    else if (level == 2)
+        message_buff[message_pointer_pos] = '2';
+    else
+        return false;
+    message_pointer_pos++;
+
+    EndCMD();
+    return SendCMD();
+}
 // ---------------------------------------------------------------------------------------
 
 bool EchoBackOff()
@@ -392,7 +548,7 @@ bool PDPContext(const char cid, PDP_type_enum pdp_type, const char *apn, const c
     EnumToCharWriteBuff((uint8_t)emergency_flag);
 
     EndCMD();
-    return SendCMD(50);
+    return SendCMD();
 }
 
 bool GetPDPContext()
@@ -406,6 +562,113 @@ bool GetPDPContext()
     }
 
     ReadCMD();
+
+    EndCMD();
+    return SendCMD();
+}
+// ---------------------------------------------------------------------------------------
+
+// GNSS ----------------------------------------------------------------------------------
+bool GetGNSS()
+{
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CGNSINF); i++)
+    {
+        message_buff[message_pointer_pos] = CGNSINF[i];
+        message_pointer_pos++;
+    }
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool SetGNSSPowerMode(bool state)
+{
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CGNSPWR); i++)
+    {
+        message_buff[message_pointer_pos] = CGNSPWR[i];
+        message_pointer_pos++;
+    }
+
+    WriteCMD();
+
+    message_buff[message_pointer_pos] = state ? '1' : '0';
+    message_pointer_pos++;
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool SetGNSSWorkMode(bool gps_mode, bool plo_mode, bool bd_mode, bool gal_mode, bool qzss_mode)
+{
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CGNSMOD); i++)
+    {
+        message_buff[message_pointer_pos] = CGNSMOD[i];
+        message_pointer_pos++;
+    }
+
+    WriteCMD();
+
+    message_buff[message_pointer_pos] = gps_mode ? '1' : '0';
+    message_pointer_pos++;
+
+    ValueDelimiter();
+
+    message_buff[message_pointer_pos] = plo_mode ? '1' : '0';
+    message_pointer_pos++;
+
+    ValueDelimiter();
+
+    message_buff[message_pointer_pos] = bd_mode ? '1' : '0';
+    message_pointer_pos++;
+
+    ValueDelimiter();
+
+    message_buff[message_pointer_pos] = gal_mode ? '1' : '0';
+    message_pointer_pos++;
+
+    ValueDelimiter();
+
+    message_buff[message_pointer_pos] = qzss_mode ? '1' : '0';
+    message_pointer_pos++;
+
+    EndCMD();
+    return SendCMD();
+}
+// ---------------------------------------------------------------------------------------
+
+// SIMCom --------------------------------------------------------------------------------
+bool ShowNetworkSystemMode()
+{
+    // AT+CNSMOD?
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CNSMOD); i++)
+    {
+        message_buff[message_pointer_pos] = CNSMOD[i];
+        message_pointer_pos++;
+    }
+    ReadCMD();
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool GetNetworkAPN()
+{
+    // AT+CGNAPN
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CGNAPN); i++)
+    {
+        message_buff[message_pointer_pos] = CGNAPN[i];
+        message_pointer_pos++;
+    }
 
     EndCMD();
     return SendCMD();

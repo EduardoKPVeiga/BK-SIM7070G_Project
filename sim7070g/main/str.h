@@ -1,6 +1,8 @@
 #ifndef STR_H_
 #define STR_H_
 
+#include "string.h"
+
 #define SIZE(x) ((sizeof(x)) - 1)
 
 bool StrCompare(char *str1, char *str2, int size_str1, int size_str2);

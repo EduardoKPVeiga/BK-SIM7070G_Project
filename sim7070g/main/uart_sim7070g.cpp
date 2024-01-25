@@ -33,9 +33,26 @@ void UARTSim7070gInit()
     ESP_ERROR_CHECK(uart_param_config(uart_sim7070g, &uart_config));
 }
 
+void Clean_msg_received()
+{
+    for (int i = 0; i < MSG_RECEIVED_BUFF_SIZE; i++)
+        msg_received[i] = '\0';
+}
+
 bool SendCMD(int max_resp_time)
 {
-    ESP_LOGI(TAG, "Sending - %s", message_buff);
+    Clean_msg_received();
+    char message_buff_log[message_pointer_pos] = {0};
+
+    for (int j = 0; j < message_pointer_pos; j++)
+    {
+        if (message_buff[j] == '\0' && j < message_pointer_pos - 3)
+            message_buff_log[j] = '/';
+        else
+            message_buff_log[j] = message_buff[j];
+    }
+    ESP_LOGI(TAG, "Sending - %s", message_buff_log);
+
     uart_write_bytes(uart_sim7070g, (const char *)message_buff, message_pointer_pos);
     uart_wait_tx_done(uart_sim7070g, 100);
     ESP_ERROR_CHECK(uart_flush(uart_sim7070g));
@@ -60,14 +77,16 @@ bool SendCMD(int max_resp_time)
                 ESP_LOGE(TAG, "Message Received - %s", msg_received);
                 return 0;
             }
+
             for (int j = 0; j < length; j++)
             {
                 if (msg_received[j] == '\0' && j < length - 3)
-                    msg_received_LOG[j] = '.';
+                    msg_received_LOG[j] = '/';
                 else
                     msg_received_LOG[j] = msg_received[j];
             }
             ESP_LOGW(TAG, "Message Received - %s", msg_received);
+
             return 1;
             //}
             ESP_ERROR_CHECK(uart_flush(uart_sim7070g));

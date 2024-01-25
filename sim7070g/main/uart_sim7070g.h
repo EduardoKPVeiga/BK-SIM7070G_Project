@@ -17,6 +17,7 @@
 
 extern char message_buff[MESSAGE_BUFF_MAX_SIZE];
 extern uint16_t message_pointer_pos;
+extern char msg_received[MSG_RECEIVED_BUFF_SIZE];
 
 /**
  * Initialize UART
@@ -24,6 +25,13 @@ extern uint16_t message_pointer_pos;
  * @return void
  */
 void UARTSim7070gInit();
+
+/**
+ * Clean the message received buffer
+ * @author Eduardo Veiga
+ * @return void
+ */
+void Clean_msg_received();
 
 /**
  * Send the message buffer to SIM7070G

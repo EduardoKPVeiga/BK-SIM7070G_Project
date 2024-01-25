@@ -7,7 +7,6 @@
 #include "pins.h"
 #include "str.h"
 #include "uart_sim7070g.h"
-#include "string.h"
 
 #define BEGIN_CMD "AT\0"
 #define END_CMD "\0\r\n"
@@ -32,6 +31,13 @@
 #define SNPING4 "+SNPING4" // Ping IPV4
 #define CGATT "+CGATT"     // Attach or detach from GPRS Service
 #define CGDCONT "+CGDCONT" // Define PDP context
+
+#define CGNSINF "+CGNSINF" // GNSS navigation information parsed from NMEA sentences
+#define CGNSPWR "+CGNSPWR" // GNSS power control
+#define CGNSMOD "+CGNSMOD" // GNSS work mode set
+
+#define CNSMOD "+CNSMOD" // Network system mode
+#define CGNAPN "+CGNAPN" // Network APN
 
 #define CLIENTID "CLIENTID"
 #define URL "URL"
@@ -185,6 +191,46 @@ bool SetBrokerURL(const char *address, const char *port);
 bool TestCMDMQTTParameters();
 
 /**
+ * Set the asyncmode
+ * @author Eduardo Veiga
+ * @param mode : bool
+ * @return true if successful, false otherwise
+ */
+bool SetAsyncmode(bool mode);
+
+/**
+ * Set subhex
+ * @author Eduardo Veiga
+ * @param data_hex : bool
+ * @return true if successful, false otherwise
+ */
+bool SetSubhex(bool data_hex);
+
+/**
+ * Set the retain mode
+ * @author Eduardo Veiga
+ * @param mode : bool
+ * @return true if successful, false otherwise
+ */
+bool SetRetain(bool mode);
+
+/**
+ * Set publish message details
+ * @author Eduardo Veiga
+ * @param details : const char*
+ * @return true if successful, false otherwise
+ */
+bool SetMessageDetails(const char *details);
+
+/**
+ * Set QOS level
+ * @author Eduardo Veiga
+ * @param level : int
+ * @return true if successful, false otherwise
+ */
+bool SetQOS(int level);
+
+/**
  * Disable echo mode
  * @return true if successful, false otherwise
  * @author Eduardo Veiga
@@ -220,7 +266,7 @@ bool GPRSAttachment(bool active);
  * @param emergency_flag : bool
  * @return true if successful, false otherwise
  */
-bool PDPContext(const char cid, PDP_type_enum pdp_type, const char *apn, const char *pdp_addr, D_comp_enum d_comp = D_OFF, H_comp_enum h_comp = H_OFF, bool ipv4_ctrl = true, bool emergency_flag = false);
+bool PDPContext(const char cid, PDP_type_enum pdp_type, const char *apn, const char *pdp_addr, D_comp_enum d_comp, H_comp_enum h_comp, bool ipv4_ctrl, bool emergency_flag);
 
 /**
  * Get PDP context
@@ -229,4 +275,44 @@ bool PDPContext(const char cid, PDP_type_enum pdp_type, const char *apn, const c
  */
 bool GetPDPContext();
 
+/**
+ * Get GNSS information
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetGNSS();
+
+/**
+ * Set GNSS power suply
+ * @author Eduardo Veiga
+ * @param state : bool
+ * @return true if successful, false otherwise
+ */
+bool SetGNSSPowerMode(bool state);
+
+/**
+ * GNSS work mode set
+ * @author Eduardo Veiga
+ * @param gps_mode : bool
+ * @param plo_mode : bool
+ * @param bd_mode : bool
+ * @param gal_mode : bool
+ * @param qzss_mode : bool
+ * @return true if successful, false otherwise
+ */
+bool SetGNSSWorkMode(bool gps_mode, bool plo_mode, bool bd_mode, bool gal_mode, bool qzss_mode);
+
+/**
+ * Show network system mode
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool ShowNetworkSystemMode();
+
+/**
+ * Get network APN in CAT-M or NB-IOT
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetNetworkAPN();
 #endif

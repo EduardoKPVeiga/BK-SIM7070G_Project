@@ -19,7 +19,9 @@
         "sim7070g_commands.h": "c",
         "chrono": "cpp",
         "format": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "xlocale": "cpp",
+        "xstring": "cpp"
     },
     "idf.flashType": "UART"
 }
