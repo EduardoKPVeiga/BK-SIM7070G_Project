@@ -12,9 +12,13 @@
 
 void MQTTInit();
 void GNSSInit();
+void GPRSInit();
 double GetLatitude();
 double GetLongitude();
 double GetAltitude();
 int GetSatellitesInView();
+void PDNAutoActivation();
+void PDNManualActivation();
+void PrintCoord();
 
 #endif

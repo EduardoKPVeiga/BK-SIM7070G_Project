@@ -7,6 +7,7 @@
 #include "pins.h"
 #include "str.h"
 #include "uart_sim7070g.h"
+#include "esp_log.h"
 
 #define BEGIN_CMD "AT\0"
 #define END_CMD "\0\r\n"
@@ -20,6 +21,8 @@
 #define WRITE_CMD "="
 
 #define ECHO_OFF "AT\0E0"
+
+// MQTT commands
 #define SMCONF "+SMCONF"   // Set MQTT Parameter
 #define SMSSL "+SMSSL"     // Select SSL Configure
 #define SMCONN "+SMCONN"   // MQTT Connection
@@ -27,23 +30,41 @@
 #define SMSUB "+SMSUB"     // Subscribe Packet
 #define SMUNSUB "+SMUNSUB" // Unsubscribe Packet
 #define SMDISC "+SMDISC"   // Disconnection MQTT
+#define SMPUB "+SMPUB"     // Send packet
 
+// GPRS
 #define SNPING4 "+SNPING4" // Ping IPV4
 #define CGATT "+CGATT"     // Attach or detach from GPRS Service
 #define CGDCONT "+CGDCONT" // Define PDP context
 
+// GNSS
 #define CGNSINF "+CGNSINF" // GNSS navigation information parsed from NMEA sentences
 #define CGNSPWR "+CGNSPWR" // GNSS power control
 #define CGNSMOD "+CGNSMOD" // GNSS work mode set
 
-#define CNSMOD "+CNSMOD" // Network system mode
-#define CGNAPN "+CGNAPN" // Network APN
+// IP Application
+#define CNSMOD "+CNSMOD"     // Network system mode
+#define CGNAPN "+CGNAPN"     // Network APN
+#define CEREG "+CEREG"       // EPS network registration status
+#define CAOPEN "+CAOPEN"     // TCP/UDP connection
+#define CPIN "+CPIN"         // SIM card status
+#define CSQ "+CSQ"           // RF signal
+#define CGATT "+CGATT"       // Check PS service
+#define COPS "+COPS"         // Query information
+#define CNCFG "+CNCFG"       // PDP configure
+#define CBANDCFG "+CBANDCFG" // Test if the band is properly set
+#define CFUN "+CFUN"         // Set Phone Functionality
+
+#define CNTP "+CNTP" // UTC time
+
+#define CNACT "+CNACT" // APP network active
+#define CMNB "+CMNB"   // Preferred selection between CAT-M and NB-IoT
 
 #define CLIENTID "CLIENTID"
 #define URL "URL"
 #define KEEPTIME "KEEPTIME"
 #define USERNAME "USERNAME"
-#define PASSWORD "PASSWORD",
+#define PASSWORD "PASSWORD"
 #define CLEANSS "CLEANSS"
 #define QOS "QOS"
 #define TOPIC "TOPIC"
@@ -78,6 +99,33 @@ enum H_comp_enum
     RFC1144 = 2,
     RFC2507 = 3,
     RFC3095 = 4
+};
+
+enum Action_enum
+{
+    DEACTIVED = 0,
+    ACTIVED = 1,
+    AUTO_ACTIVE = 2
+};
+
+enum Network_select_enum
+{
+    CAT_M = 1,
+    NB_IOT = 2,
+    BOTH = 3
+};
+
+enum Qos_enum
+{
+    QOS_0 = 0,
+    QOS_1 = 1,
+    QOS_2 = 2
+};
+
+enum Cfun_enum
+{
+    MIN_FUNC = 0,
+    FULL_FUNC = 1
 };
 
 /**
@@ -121,6 +169,13 @@ void WriteCMD();
  * @return void
  */
 void ReadCMD();
+
+/**
+ * Put the char array "=?" in the message
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+void TestCMD();
 
 /**
  * Put the character '[' in the message
@@ -243,7 +298,7 @@ bool EchoBackOff();
  * @param ipaddress: const char
  * @return true if successful, false otherwise
  */
-bool PingIPV4(const char *ipaddress, const char *count = "4", const char *size = "16", const char *timeout = "10000");
+bool PingIPV4(const char *ipaddress, const char *count = "1", const char *size = "16", const char *timeout = "10000");
 
 /**
  * GPRS attachment command
@@ -257,7 +312,7 @@ bool GPRSAttachment(bool active);
  * Define PDP context
  * @author Eduardo Veiga
  * @param cid : const char (1..15)
- * @param pdp_type : PDP_type_enum
+ * @param pdp_type : const char*
  * @param apn : const char*
  * @param pdp_addr : const char*
  * @param d_comp : D_comp_enum
@@ -266,7 +321,17 @@ bool GPRSAttachment(bool active);
  * @param emergency_flag : bool
  * @return true if successful, false otherwise
  */
-bool PDPContext(const char cid, PDP_type_enum pdp_type, const char *apn, const char *pdp_addr, D_comp_enum d_comp, H_comp_enum h_comp, bool ipv4_ctrl, bool emergency_flag);
+bool PDPContext(const char cid, const char *pdp_type, const char *apn, const char *pdp_addr, D_comp_enum d_comp, H_comp_enum h_comp, bool ipv4_ctrl, bool emergency_flag);
+
+/**
+ * Define PDP context
+ * @author Eduardo Veiga
+ * @param cid : const char (1..15)
+ * @param pdp_type : const char*
+ * @param apn : const char*
+ * @return true if successful, false otherwise
+ */
+bool PDPContext(const char cid, const char *pdp_type, const char *apn);
 
 /**
  * Get PDP context
@@ -315,4 +380,136 @@ bool ShowNetworkSystemMode();
  * @return true if successful, false otherwise
  */
 bool GetNetworkAPN();
+
+/**
+ * EPS network registration status
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetEPSNetworkStatus();
+
+/**
+ * Set EPS network registration status
+ * @author Eduardo Veiga
+ * @param n : char ('0', '1', '2', '3', '4')
+ * @return true if successful, false otherwise
+ */
+bool SetEPSNetworkStatus(char n);
+
+/**
+ * TCP/UDP connection status
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetTCPUDPConnectionStatus();
+
+/**
+ * Check SIM card status
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool CheckSIMCard();
+
+/**
+ * Check RF signal
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool CheckRF();
+
+/**
+ * Check PS service
+ * @author Eduardo Veiga
+ * @return true if sucessful, false otherwise
+ */
+bool CheckPSService();
+
+/**
+ * Query network information, operator and network
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool QueryNetworkInfo();
+
+/**
+ * PDP configure
+ * @author Eduardo Veiga
+ * @param pdpidx : const char ('0', '1', '2', '3')
+ * @param ip_type : const char ('0', '1', '2', '3', '4')
+ * @param apn : const char*
+ * @return true if successful, false otherwise
+ */
+bool PDPConfigure(const char pdpidx, const char ip_type, const char *apn);
+
+/**
+ * PDP configure read command
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool PDPConfigureReadCMD();
+
+/**
+ * Test if the band is properly set
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool BandTest();
+
+/**
+ * Preferred selection between CAT-M and NB-IoT
+ * @author Eduardo Veiga
+ * @param mode : Network_select_enum
+ * @return true if successful, false otherwise
+ */
+bool SetNetworkType(Network_select_enum mode);
+
+/**
+ * Send packet through MQTT
+ * @author Eduardo Veiga
+ * @param topic : const char*
+ * @param length : const char*
+ * @param qos : Qos_enum
+ * @param retain : bool
+ * @param msg : const char*
+ * @return true if successful, false otherwise
+ */
+bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain, const char *msg);
+
+/**
+ * Test send packet through MQTT command
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool TestSendPacket();
+
+/**
+ * APP network active read command
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool AppNetworkActiveReadCMD();
+
+/**
+ * Get UTC time
+ * @author Eduardo Veiga
+ * @return true if successful, false oherwise
+ */
+bool GetSynchronizeUTCTime();
+
+/**
+ * Open wireless connection parameter 0 is PDP index, parameter 1 means active.
+ * @author Eduardo Veiga
+ * @param pdpidx : const char ('0', '1', '2', '3')
+ * @param action : Action_enum
+ * @return true if successful, false otherwise
+ */
+bool APPNetworkActive(const char pdpidx, Action_enum action);
+
+/**
+ * Set phone functionality
+ * @author Eduardo Veiga
+ * @param fun : Cfun_enum
+ * @return true if successful, false otherwise
+ */
+bool SetPhoneFunc(Cfun_enum fun);
 #endif

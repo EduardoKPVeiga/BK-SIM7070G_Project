@@ -11,6 +11,8 @@
 #define UART_TASK_PRIORITY 0
 #define UART_TASK_CORE_ID 1
 
+#define BAUD_RATE 115200
+
 #define MESSAGE_BUFF_MAX_SIZE 559
 
 #define DELAY_SEND 100 // ms
@@ -18,6 +20,7 @@
 extern char message_buff[MESSAGE_BUFF_MAX_SIZE];
 extern uint16_t message_pointer_pos;
 extern char msg_received[MSG_RECEIVED_BUFF_SIZE];
+extern uint16_t length;
 
 /**
  * Initialize UART
@@ -41,4 +44,9 @@ void Clean_msg_received();
  */
 bool SendCMD(int max_resp_time = 10);
 
+/**
+ * Read the uart buffer
+ * @author Eduardo Veiga
+ */
+void ReadUart();
 #endif

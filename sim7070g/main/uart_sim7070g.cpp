@@ -13,7 +13,7 @@ uint16_t message_pointer_pos = 0;
 void UARTSim7070gInit()
 {
     uart_config_t uart_config = {
-        .baud_rate = 115200,
+        .baud_rate = BAUD_RATE,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -42,6 +42,8 @@ void Clean_msg_received()
 bool SendCMD(int max_resp_time)
 {
     Clean_msg_received();
+    ESP_ERROR_CHECK(uart_flush(uart_sim7070g));
+    ESP_LOGI(TAG, "message_pointer_pos: %d", message_pointer_pos);
     char message_buff_log[message_pointer_pos] = {0};
 
     for (int j = 0; j < message_pointer_pos; j++)
@@ -51,11 +53,12 @@ bool SendCMD(int max_resp_time)
         else
             message_buff_log[j] = message_buff[j];
     }
-    ESP_LOGI(TAG, "Sending - %s", message_buff_log);
+    ESP_LOGI(TAG, "writing command - %s", message_buff_log);
 
     uart_write_bytes(uart_sim7070g, (const char *)message_buff, message_pointer_pos);
-    uart_wait_tx_done(uart_sim7070g, 100);
+    // uart_wait_tx_done(uart_sim7070g, 100);
     ESP_ERROR_CHECK(uart_flush(uart_sim7070g));
+    vTaskDelay(100 / portTICK_PERIOD_MS);
 
     // Wait for a response
     int attempts = (max_resp_time * 1000) / DELAY_SEND;
@@ -72,11 +75,6 @@ bool SendCMD(int max_resp_time)
 
             // if (ValidCharArray(message_buff, message_pointer_pos))
             //{
-            if (StrContainsSubstr(msg_received, RESP_ERROR, length, SIZE(RESP_ERROR)))
-            {
-                ESP_LOGE(TAG, "Message Received - %s", msg_received);
-                return 0;
-            }
 
             for (int j = 0; j < length; j++)
             {
@@ -85,14 +83,38 @@ bool SendCMD(int max_resp_time)
                 else
                     msg_received_LOG[j] = msg_received[j];
             }
-            ESP_LOGW(TAG, "Message Received - %s", msg_received);
 
+            if (StrContainsSubstr(msg_received, RESP_ERROR, length, SIZE(RESP_ERROR)))
+            {
+                ESP_LOGE(TAG, "Message Received - %s", msg_received_LOG);
+                ESP_ERROR_CHECK(uart_flush(uart_sim7070g));
+                return 0;
+            }
+
+            ESP_LOGW(TAG, "Message Received - %s", msg_received_LOG);
+            ESP_ERROR_CHECK(uart_flush(uart_sim7070g));
             return 1;
             //}
-            ESP_ERROR_CHECK(uart_flush(uart_sim7070g));
         }
         vTaskDelay(DELAY_SEND / portTICK_PERIOD_MS);
     }
     ESP_LOGE(TAG, "Command failed!");
+    ESP_ERROR_CHECK(uart_flush(uart_sim7070g));
     return 0;
+}
+
+void ReadUart()
+{
+    char uart_read[MSG_RECEIVED_BUFF_SIZE] = {0};
+    int uart_size = 0;
+    ESP_ERROR_CHECK(uart_get_buffered_data_len(uart_sim7070g, (size_t *)&uart_size));
+    if (uart_size > 0)
+    {
+        ESP_LOGI(TAG, "Message size: %d", uart_size);
+        char uart_read_aux[uart_size] = {0};
+        uart_read_bytes(uart_sim7070g, uart_read, 5, 100);
+
+        ESP_LOGI(TAG, "%s", uart_read);
+        ESP_ERROR_CHECK(uart_flush(uart_sim7070g));
+    }
 }

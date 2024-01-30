@@ -49,6 +49,14 @@ void ReadCMD()
     message_pointer_pos++;
 }
 
+void TestCMD()
+{
+    message_buff[message_pointer_pos] = TEST_CMD[0];
+    message_pointer_pos++;
+    message_buff[message_pointer_pos] = TEST_CMD[1];
+    message_pointer_pos++;
+}
+
 void OpenBracket()
 {
     /*
@@ -210,23 +218,23 @@ bool SetBrokerURL(const char *address, const char *port)
 
     ValueDelimiter();
 
-    QuotationMarks();
+    // QuotationMarks();
     for (int i = 0; i < strlen(address); i++)
     {
         message_buff[message_pointer_pos] = address[i];
         message_pointer_pos++;
     }
-    QuotationMarks();
+    // QuotationMarks();
 
     ValueDelimiter();
 
-    QuotationMarks();
+    // QuotationMarks();
     for (int i = 0; i < strlen(port); i++)
     {
         message_buff[message_pointer_pos] = port[i];
         message_pointer_pos++;
     }
-    QuotationMarks();
+    // QuotationMarks();
 
     EndCMD();
 
@@ -406,6 +414,100 @@ bool SetQOS(int level)
     EndCMD();
     return SendCMD();
 }
+
+bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain, const char *msg)
+{
+    // AT+SMPUB=<topic>,<content length>,<qos>,<retain><CR>message is enteredQuit edit mode if message length equals to <content length>
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(SMPUB); i++)
+    {
+        message_buff[message_pointer_pos] = SMPUB[i];
+        message_pointer_pos++;
+    }
+
+    WriteCMD();
+
+    QuotationMarks();
+    for (int i = 0; i < strlen(topic); i++)
+    {
+        message_buff[message_pointer_pos] = topic[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
+
+    ValueDelimiter();
+
+    for (int i = 0; i < strlen(length); i++)
+    {
+        message_buff[message_pointer_pos] = length[i];
+        message_pointer_pos++;
+    }
+
+    ValueDelimiter();
+
+    if (qos == QOS_0)
+        message_buff[message_pointer_pos] = '0';
+    else if (qos == QOS_1)
+        message_buff[message_pointer_pos] = '1';
+    else if (qos == QOS_2)
+        message_buff[message_pointer_pos] = '2';
+    message_pointer_pos++;
+
+    ValueDelimiter();
+
+    message_buff[message_pointer_pos] = retain ? '1' : '0';
+    message_pointer_pos++;
+
+    EndCMD();
+    // message_buff[message_pointer_pos] = '\r';
+    // message_pointer_pos++;
+
+    // QuotationMarks();
+    // for (int i = 0; i < strlen(msg); i++)
+    // {
+    //     message_buff[message_pointer_pos] = msg[i];
+    //     message_pointer_pos++;
+    // }
+    // QuotationMarks();
+
+    // EndCMD();
+    // return SendCMD();
+
+    int cont = 0;
+    ESP_LOGI("CMD", "writing send packet command...");
+    while (!SendCMD(50) && cont < 5)
+    {
+        ESP_LOGI("CMD", "writing send packet command...");
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+    if (StrContainsSubstr(msg_received, ">", 4, 1))
+    {
+        message_pointer_pos = 0;
+        for (int i = 0; i < strlen(msg); i++)
+        {
+            message_buff[message_pointer_pos] = msg[i];
+            message_pointer_pos++;
+        }
+
+        // EndCMD();
+        return SendCMD(50);
+    }
+    return false;
+}
+
+bool TestSendPacket()
+{
+    BeginCMD();
+    for (int i = 0; i < SIZE(SMPUB); i++)
+    {
+        message_buff[message_pointer_pos] = SMPUB[i];
+        message_pointer_pos++;
+    }
+    TestCMD();
+    EndCMD();
+    return SendCMD();
+}
 // ---------------------------------------------------------------------------------------
 
 bool EchoBackOff()
@@ -488,17 +590,14 @@ bool GPRSAttachment(bool active)
 
     WriteCMD();
 
-    if (active)
-        message_buff[message_pointer_pos] = '1';
-    else
-        message_buff[message_pointer_pos] = '0';
+    message_buff[message_pointer_pos] = active ? '1' : '0';
     message_pointer_pos++;
 
     EndCMD();
     return SendCMD(75);
 }
 
-bool PDPContext(const char cid, PDP_type_enum pdp_type, const char *apn, const char *pdp_addr, D_comp_enum d_comp, H_comp_enum h_comp, bool ipv4_ctrl, bool emergency_flag)
+bool PDPContext(const char cid, const char *pdp_type, const char *apn, const char *pdp_addr, D_comp_enum d_comp, H_comp_enum h_comp, bool ipv4_ctrl, bool emergency_flag)
 {
     BeginCMD();
 
@@ -515,7 +614,13 @@ bool PDPContext(const char cid, PDP_type_enum pdp_type, const char *apn, const c
 
     ValueDelimiter();
 
-    EnumToCharWriteBuff(pdp_type);
+    QuotationMarks();
+    for (int i = 0; i < strlen(pdp_type); i++)
+    {
+        message_buff[message_pointer_pos] = pdp_type[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
 
     ValueDelimiter();
     QuotationMarks();
@@ -547,6 +652,43 @@ bool PDPContext(const char cid, PDP_type_enum pdp_type, const char *apn, const c
     ValueDelimiter();
     EnumToCharWriteBuff((uint8_t)emergency_flag);
 
+    EndCMD();
+    return SendCMD();
+}
+
+bool PDPContext(const char cid, const char *pdp_type, const char *apn)
+{
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CGDCONT); i++)
+    {
+        message_buff[message_pointer_pos] = CGDCONT[i];
+        message_pointer_pos++;
+    }
+
+    WriteCMD();
+
+    message_buff[message_pointer_pos] = cid;
+    message_pointer_pos++;
+
+    ValueDelimiter();
+
+    QuotationMarks();
+    for (int i = 0; i < strlen(pdp_type); i++)
+    {
+        message_buff[message_pointer_pos] = pdp_type[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
+
+    ValueDelimiter();
+    QuotationMarks();
+    for (int i = 0; i < strlen(apn); i++)
+    {
+        message_buff[message_pointer_pos] = apn[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
     EndCMD();
     return SendCMD();
 }
@@ -672,5 +814,318 @@ bool GetNetworkAPN()
 
     EndCMD();
     return SendCMD();
+}
+
+bool GetEPSNetworkStatus()
+{
+    // AT+CEREG?
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CEREG); i++)
+    {
+        message_buff[message_pointer_pos] = CEREG[i];
+        message_pointer_pos++;
+    }
+    ReadCMD();
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool SetEPSNetworkStatus(char n)
+{
+    // AT+CEREG=<n>
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CEREG); i++)
+    {
+        message_buff[message_pointer_pos] = CEREG[i];
+        message_pointer_pos++;
+    }
+    WriteCMD();
+
+    message_buff[message_pointer_pos] = n;
+    message_pointer_pos++;
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool GetTCPUDPConnectionStatus()
+{
+    // AT+CAOPEN?
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CAOPEN); i++)
+    {
+        message_buff[message_pointer_pos] = CAOPEN[i];
+        message_pointer_pos++;
+    }
+    ReadCMD();
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool CheckSIMCard()
+{
+    // AT+CPIN?
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CPIN); i++)
+    {
+        message_buff[message_pointer_pos] = CPIN[i];
+        message_pointer_pos++;
+    }
+    ReadCMD();
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool CheckRF()
+{
+    // AT+CSQ
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CSQ); i++)
+    {
+        message_buff[message_pointer_pos] = CSQ[i];
+        message_pointer_pos++;
+    }
+
+    EndCMD();
+    if (SendCMD())
+    {
+        if (StrContainsSubstr(msg_received, "99", MSG_RECEIVED_BUFF_SIZE, strlen("99")))
+        {
+            ESP_LOGE("CMD", "<rssi> or <ber> parameters not knowm or not detectable.");
+        }
+        return true;
+    }
+    return false;
+}
+
+bool CheckPSService()
+{
+    // AT+CGATT?
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CGATT); i++)
+    {
+        message_buff[message_pointer_pos] = CGATT[i];
+        message_pointer_pos++;
+    }
+    ReadCMD();
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool QueryNetworkInfo()
+{
+    // AT+COPS?
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(COPS); i++)
+    {
+        message_buff[message_pointer_pos] = COPS[i];
+        message_pointer_pos++;
+    }
+    ReadCMD();
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool PDPConfigure(const char pdpidx, const char ip_type, const char *apn)
+{
+    // AT+CNCFG=0,1,"ctnb"
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CNCFG); i++)
+    {
+        message_buff[message_pointer_pos] = CNCFG[i];
+        message_pointer_pos++;
+    }
+    WriteCMD();
+
+    message_buff[message_pointer_pos] = pdpidx;
+    message_pointer_pos++;
+
+    ValueDelimiter();
+
+    message_buff[message_pointer_pos] = ip_type;
+    message_pointer_pos++;
+
+    ValueDelimiter();
+
+    QuotationMarks();
+    for (int i = 0; i < strlen(apn); i++)
+    {
+        message_buff[message_pointer_pos] = apn[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool PDPConfigureReadCMD()
+{
+    // AT+CNCFG?
+    BeginCMD();
+    for (int i = 0; i < SIZE(CNCFG); i++)
+    {
+        message_buff[message_pointer_pos] = CNCFG[i];
+        message_pointer_pos++;
+    }
+    ReadCMD();
+    EndCMD();
+    return SendCMD();
+}
+
+bool BandTest()
+{
+    // AT+CBANDCFG?
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CBANDCFG); i++)
+    {
+        message_buff[message_pointer_pos] = CBANDCFG[i];
+        message_pointer_pos++;
+    }
+    ReadCMD();
+
+    EndCMD();
+    return SendCMD();
+}
+
+bool SetNetworkType(Network_select_enum mode)
+{
+    // AT+CMNB=<mode>
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CMNB); i++)
+    {
+        message_buff[message_pointer_pos] = CMNB[i];
+        message_pointer_pos++;
+    }
+
+    WriteCMD();
+
+    if (mode == CAT_M)
+        message_buff[message_pointer_pos] = '1';
+    else if (mode == NB_IOT)
+        message_buff[message_pointer_pos] = '2';
+    else if (mode == BOTH)
+        message_buff[message_pointer_pos] = '3';
+    message_pointer_pos++;
+
+    EndCMD();
+    return SendCMD();
+}
+// ---------------------------------------------------------------------------------------
+
+// NTP App -------------------------------------------------------------------------------
+bool GetSynchronizeUTCTime()
+{
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CNTP); i++)
+    {
+        message_buff[message_pointer_pos] = CNTP[i];
+        message_pointer_pos++;
+    }
+
+    ReadCMD();
+
+    EndCMD();
+    return SendCMD();
+}
+// ---------------------------------------------------------------------------------------
+
+// IP App --------------------------------------------------------------------------------
+bool APPNetworkActive(const char pdpidx, Action_enum action)
+{
+    // AT+CNACT=<pdpidx>,<action>
+    BeginCMD();
+
+    for (int i = 0; i < SIZE(CNACT); i++)
+    {
+        message_buff[message_pointer_pos] = CNACT[i];
+        message_pointer_pos++;
+    }
+
+    WriteCMD();
+
+    message_buff[message_pointer_pos] = pdpidx;
+    message_pointer_pos++;
+
+    ValueDelimiter();
+
+    if (action == DEACTIVED)
+        message_buff[message_pointer_pos] = '0';
+    else if (action == ACTIVED)
+        message_buff[message_pointer_pos] = '1';
+    else if (action == AUTO_ACTIVE)
+        message_buff[message_pointer_pos] = '2';
+    message_pointer_pos++;
+    EndCMD();
+
+    char *deactived = "DEACTIVE";
+    if (SendCMD())
+    {
+        return (StrContainsSubstr(msg_received, deactived, MSG_RECEIVED_BUFF_SIZE, strlen("DEACTIVE"))) ? false : true;
+    }
+    return false;
+}
+
+bool AppNetworkActiveReadCMD()
+{
+    // AT+CNACT?
+    BeginCMD();
+    for (int i = 0; i < SIZE(CNACT); i++)
+    {
+        message_buff[message_pointer_pos] = CNACT[i];
+        message_pointer_pos++;
+    }
+    ReadCMD();
+    EndCMD();
+    return SendCMD();
+}
+// ---------------------------------------------------------------------------------------
+
+// AT cmd (3GPP TS 27.00) ----------------------------------------------------------------
+bool SetPhoneFunc(Cfun_enum fun)
+{
+    // AT+CFUN=<fun>[,<rst>]
+    BeginCMD();
+    for (int i = 0; i < SIZE(CFUN); i++)
+    {
+        message_buff[message_pointer_pos] = CFUN[i];
+        message_pointer_pos++;
+    }
+    WriteCMD();
+    if (fun == MIN_FUNC)
+        message_buff[message_pointer_pos] = '0';
+    else if (fun == FULL_FUNC)
+        message_buff[message_pointer_pos] = '1';
+    message_pointer_pos++;
+    EndCMD();
+    if (SendCMD(15))
+    {
+        if (StrContainsSubstr(msg_received, CPIN, MSG_RECEIVED_BUFF_SIZE, SIZE(CPIN)) && StrContainsSubstr(msg_received, "READY", MSG_RECEIVED_BUFF_SIZE, strlen("READY")))
+        {
+            // if (StrContainsSubstr(msg_received, "NOT", MSG_RECEIVED_BUFF_SIZE, strlen("NOT")))
+            // {
+            //     ESP_LOGW("CMD", );
+            // }
+            return true;
+        }
+        return true; // <-----------
+    }
+    return false;
 }
 // ---------------------------------------------------------------------------------------
