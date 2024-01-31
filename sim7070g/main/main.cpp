@@ -2,6 +2,8 @@
 
 static const char TAG[] = "Main";
 
+uint8_t cmd_failed_counter = 0;
+
 const char pdp = '0';
 const char ip_type = '1'; // Internet Protocol Version 4
 
@@ -13,7 +15,7 @@ const char *client_id = "15";
 const char *details = "GPS data";
 const bool async_mode = true;
 const bool sub_hex = true;
-const int qos_level = 1;
+const Qos_enum qos_level = QOS_1;
 
 // GPRS parameters
 const char *apn_vivo = "zap.vivo.com.br";
@@ -38,9 +40,7 @@ extern "C"
         PinsSetup();
         ESP_LOGI(TAG, "Pins Setup.");
 
-        UARTSim7070gInit();
-        ESP_LOGI(TAG, "UART SIM7070G Init.");
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        uart2_task_init();
 
         PWRKEYPulse();
         ESP_LOGI(TAG, "SIM7070G Init.");
@@ -48,11 +48,28 @@ extern "C"
         while (!EchoBackOff())
         {
             ESP_LOGI(TAG, "Sending echo command...");
-            vTaskDelay(10 / portTICK_PERIOD_MS);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
         ESP_LOGI(TAG, "Echo mode disabled.\n");
 
-        // GPRSInit();
+        // GNSSInit();
+
+        // while (1)
+        // {
+        //     ESP_LOGI(TAG, "Writing get GNSS command...");
+        //     while (!GetGNSS())
+        //     {
+        //         ESP_LOGI(TAG, "Writing get GNSS command...");
+        //         vTaskDelay(1000 / portTICK_PERIOD_MS);
+        //     }
+        //     ESP_LOGI(TAG, "Get GNSS.");
+
+        //     ESP_LOGI(TAG, "Latitude:\t%f", GetLatitude());
+        //     ESP_LOGI(TAG, "Longitude:\t%f", GetLongitude());
+        //     ESP_LOGI(TAG, "Altitude:\t%f", GetAltitude());
+        //     ESP_LOGI(TAG, "Satelites:\t%d", GetSatellitesInView());
+        //     vTaskDelay(2000 / portTICK_PERIOD_MS);
+        // }
 
         PDNManualActivation();
 
@@ -65,27 +82,11 @@ extern "C"
 
         MQTTInit();
 
-        while (1)
-        {
-            ESP_LOGI(TAG, "Sending MQTT test command...");
-            TestSendPacket();
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-            ESP_LOGI(TAG, "Sending MQTT msg command...");
-            SendPacket("Sim7070g", "5", QOS_0, 1, "Hello");
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-        }
-
-        // while (!GetSynchronizeUTCTime())
+        // while (1)
         // {
-        //     ESP_LOGI(TAG, "Sending get UTC time command...");
-        //     vTaskDelay(10 / portTICK_PERIOD_MS);
-        // }
-
-        // while (!GetTCPUDPConnectionStatus())
-        // {
-        //     ESP_LOGI(TAG, "Sending get EPS network status command...");
-        //     vTaskDelay(10 / portTICK_PERIOD_MS);
+        //     ESP_LOGI(TAG, "Sending MQTT msg command...");
+        //     SendPacket("Sim7070g", "5", QOS_0, 1, "Hello");
+        //     vTaskDelay(1000 / portTICK_PERIOD_MS);
         // }
     }
 }

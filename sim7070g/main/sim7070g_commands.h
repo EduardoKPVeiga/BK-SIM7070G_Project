@@ -283,7 +283,7 @@ bool SetMessageDetails(const char *details);
  * @param level : int
  * @return true if successful, false otherwise
  */
-bool SetQOS(int level);
+bool SetQOS(Qos_enum level);
 
 /**
  * Disable echo mode
@@ -481,6 +481,22 @@ bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain
  * @return true if successful, false otherwise
  */
 bool TestSendPacket();
+
+/**
+ * Indication of MQTT receive subscribe data
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool MQTTReceiveSubscribeData();
+
+/**
+ * Subscribe to a MQTT topic
+ * @author Eduardo Veiga
+ * @param topic : const char*
+ * @param qos : Qos_enum
+ * @return true if successful, false otherwise
+ */
+bool SubscribePacket(const char *topic, Qos_enum qos);
 
 /**
  * APP network active read command

@@ -379,7 +379,7 @@ bool SetMessageDetails(const char *details)
     return SendCMD();
 }
 
-bool SetQOS(int level)
+bool SetQOS(Qos_enum level)
 {
     // AT+SMCONF="QOS",1
     BeginCMD();
@@ -401,11 +401,11 @@ bool SetQOS(int level)
 
     ValueDelimiter();
 
-    if (level == 0)
+    if (level == QOS_0)
         message_buff[message_pointer_pos] = '0';
-    else if (level == 1)
+    else if (level == QOS_1)
         message_buff[message_pointer_pos] = '1';
-    else if (level == 2)
+    else if (level == QOS_2)
         message_buff[message_pointer_pos] = '2';
     else
         return false;
@@ -460,23 +460,10 @@ bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain
     message_pointer_pos++;
 
     EndCMD();
-    // message_buff[message_pointer_pos] = '\r';
-    // message_pointer_pos++;
-
-    // QuotationMarks();
-    // for (int i = 0; i < strlen(msg); i++)
-    // {
-    //     message_buff[message_pointer_pos] = msg[i];
-    //     message_pointer_pos++;
-    // }
-    // QuotationMarks();
-
-    // EndCMD();
-    // return SendCMD();
 
     int cont = 0;
     ESP_LOGI("CMD", "writing send packet command...");
-    while (!SendCMD(50) && cont < 5)
+    while (!SendCMD() && cont < 5)
     {
         ESP_LOGI("CMD", "writing send packet command...");
         vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -490,8 +477,7 @@ bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain
             message_pointer_pos++;
         }
 
-        // EndCMD();
-        return SendCMD(50);
+        return SendCMD();
     }
     return false;
 }
@@ -505,6 +491,46 @@ bool TestSendPacket()
         message_pointer_pos++;
     }
     TestCMD();
+    EndCMD();
+    return SendCMD();
+}
+
+bool MQTTReceiveSubscribeData()
+{
+    message_pointer_pos = 0;
+    for (int i = 0; i < SIZE(SMSUB); i++)
+    {
+        message_buff[message_pointer_pos] = SMSUB[i];
+        message_pointer_pos++;
+    }
+    EndCMD();
+    return SendCMD();
+}
+
+bool SubscribePacket(const char *topic, Qos_enum qos)
+{
+    BeginCMD();
+    for (int i = 0; i < SIZE(SMSUB); i++)
+    {
+        message_buff[message_pointer_pos] = SMSUB[i];
+        message_pointer_pos++;
+    }
+    WriteCMD();
+    QuotationMarks();
+    for (int i = 0; i < strlen(topic); i++)
+    {
+        message_buff[message_pointer_pos] = topic[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
+    ValueDelimiter();
+    if (qos == QOS_0)
+        message_buff[message_pointer_pos] = '0';
+    else if (qos == QOS_1)
+        message_buff[message_pointer_pos] = '1';
+    else
+        message_buff[message_pointer_pos] = '2';
+    message_pointer_pos++;
     EndCMD();
     return SendCMD();
 }

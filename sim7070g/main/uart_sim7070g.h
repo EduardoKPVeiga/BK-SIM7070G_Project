@@ -5,8 +5,9 @@
 #include "esp_log.h"
 #include "driver/uart.h"
 #include "pins.h"
+#include "esp_timer.h"
 
-#define MSG_RECEIVED_BUFF_SIZE 2048
+#define MSG_RECEIVED_BUFF_SIZE 2 * 1024
 #define UART_TASK_STACK_SIZE 4 * 1024
 #define UART_TASK_PRIORITY 0
 #define UART_TASK_CORE_ID 1
@@ -49,4 +50,17 @@ bool SendCMD(int max_resp_time = 10);
  * @author Eduardo Veiga
  */
 void ReadUart();
+
+/**
+ * Initialize uart and uart_task
+ * @return void
+ */
+void uart2_task_init();
+
+/**
+ * UART Interrupt Service Routine task, used to receive sim7070g data
+ * @return ESP_OK if successful
+ */
+void uart2_task(void *pvParameters);
+
 #endif

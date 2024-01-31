@@ -20,5 +20,6 @@ int GetSatellitesInView();
 void PDNAutoActivation();
 void PDNManualActivation();
 void PrintCoord();
+void CommunicationFailed();
 
 #endif
