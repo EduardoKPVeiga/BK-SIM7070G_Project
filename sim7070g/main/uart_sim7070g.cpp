@@ -3,6 +3,7 @@
 
 const uart_port_t uart_sim7070g = UART_NUM_2;
 char msg_received[MSG_RECEIVED_BUFF_SIZE] = {0};
+char subscribe_data[MSG_RECEIVED_BUFF_SIZE] = {0};
 uint16_t msg_received_size = 0;
 uint16_t begin_msg_received = 0;
 uint16_t end_msg_received = 0;
@@ -44,6 +45,12 @@ void Clean_msg_received()
 {
     for (int i = 0; i < MSG_RECEIVED_BUFF_SIZE; i++)
         msg_received[i] = '\0';
+}
+
+void Clean_subscribe_data()
+{
+    for (int i = 0; i < MSG_RECEIVED_BUFF_SIZE; i++)
+        subscribe_data[i] = '\0';
 }
 
 bool SendCMD(int max_resp_time)
@@ -161,6 +168,18 @@ void uart2_task(void *pvParameters)
                 msg_received_size = event.size;
                 uart_read_bytes(uart_sim7070g, &(msg_received[begin_msg_received]), msg_received_size, portMAX_DELAY);
                 uart_flush_input(uart_sim7070g);
+                if (StrContainsSubstr(&(msg_received[begin_msg_received]), SMSUB, msg_received_size, SIZE(SMSUB)))
+                {
+                    Clean_subscribe_data();
+                    for (int j = begin_msg_received, k = 0; j < end_msg_received; j++, k++)
+                    {
+                        if (msg_received[j] == '\0')
+                            subscribe_data[k] = '/';
+                        else
+                            subscribe_data[k] = msg_received[j];
+                    }
+                    ESP_LOGI(TAG, "%s", subscribe_data);
+                }
                 if (StrContainsSubstr(&(msg_received[begin_msg_received]), ">", msg_received_size, 1))
                     break;
                 if (!StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_OK, msg_received_size, SIZE(RESP_OK)) && !StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)))

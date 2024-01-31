@@ -14,7 +14,7 @@ const char *mqtt_topic = "Sim7070g";
 const char *client_id = "15";
 const char *details = "GPS data";
 const bool async_mode = true;
-const bool sub_hex = true;
+const bool sub_hex = false;
 const Qos_enum qos_level = QOS_1;
 
 // GPRS parameters
@@ -82,12 +82,12 @@ extern "C"
 
         MQTTInit();
 
-        while (1)
-        {
-            ESP_LOGI(TAG, "Sending MQTT msg command...");
-            SendPacket("Sim7070g", "5", QOS_0, 1, "Hello");
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-        }
+        // while (1)
+        // {
+        //     ESP_LOGI(TAG, "Sending MQTT msg command...");
+        //     SendPacket("Sim7070g", "5", QOS_0, 1, "Hello");
+        //     vTaskDelay(1000 / portTICK_PERIOD_MS);
+        // }
     }
 }
 

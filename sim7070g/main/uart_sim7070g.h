@@ -41,6 +41,13 @@ void UARTSim7070gInit();
 void Clean_msg_received();
 
 /**
+ * Clean the message received buffer
+ * @author Eduardo Veiga
+ * @return void
+ */
+void Clean_subscribe_data();
+
+/**
  * Send the message buffer to SIM7070G
  * @author Eduardo Veiga
  * @param max_resp_time : int (seconds)
