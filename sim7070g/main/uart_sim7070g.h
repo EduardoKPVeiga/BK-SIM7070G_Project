@@ -16,12 +16,15 @@
 
 #define MESSAGE_BUFF_MAX_SIZE 559
 
-#define DELAY_SEND 100 // ms
+#define DELAY_SEND 10 // ms
 
 extern char message_buff[MESSAGE_BUFF_MAX_SIZE];
 extern uint16_t message_pointer_pos;
 extern char msg_received[MSG_RECEIVED_BUFF_SIZE];
-extern uint16_t length;
+extern uint16_t msg_received_size;
+extern uint16_t begin_msg_received;
+extern uint16_t end_msg_received;
+extern bool received;
 
 /**
  * Initialize UART

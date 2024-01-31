@@ -51,17 +51,28 @@ bool SendCMD(int max_resp_time)
     ESP_LOGI(TAG, "message_pointer_pos: %d", message_pointer_pos);
     char message_buff_log[message_pointer_pos] = {0};
 
+    bool has_str_end = false;
     for (int j = 0; j < message_pointer_pos; j++)
     {
         if (message_buff[j] == '\0' && j < message_pointer_pos - 3)
             message_buff_log[j] = '/';
         else
             message_buff_log[j] = message_buff[j];
+        if (message_buff_log[j] == '\0')
+            has_str_end = true;
     }
-    ESP_LOGI(TAG, "writing command - %s", message_buff_log);
+    if (!has_str_end)
+    {
+        char message_buff_log_with_str_end[message_pointer_pos + 1] = {'\0'};
+        for (int i = 0; i < message_pointer_pos; i++)
+            message_buff_log_with_str_end[i] = message_buff_log[i];
+        ESP_LOGI(TAG, "writing command - [%s]", message_buff_log_with_str_end);
+    }
+    else
+        ESP_LOGI(TAG, "writing command - [%s]", message_buff_log);
 
     uart_write_bytes(uart_sim7070g, (const char *)message_buff, message_pointer_pos);
-    uart_wait_tx_done(uart_sim7070g, 100);
+    // uart_wait_tx_done(uart_sim7070g, 100);
 
     // Wait for a response
     int attempts = (max_resp_time * 1000) / DELAY_SEND;
@@ -70,31 +81,15 @@ bool SendCMD(int max_resp_time)
     {
         if (received)
         {
-            if (begin_msg_received < end_msg_received || end_msg_received - 2 >= 0)
+            //     ESP_LOGW(TAG, "begin_msg_received:\t%d", begin_msg_received);
+            //     ESP_LOGW(TAG, "end_msg_received:\t%d", end_msg_received);
+            // ESP_LOGW(TAG, "msg_received_size:\t%d", msg_received_size);
+            for (int j = begin_msg_received, k = 0; j < end_msg_received; j++, k++)
             {
-                for (int j = begin_msg_received, k = 0; j < end_msg_received - 2; j++, k++)
-                {
-                    if (msg_received[j] == '\0')
-                        msg_received_LOG[k] = '/';
-                    else
-                        msg_received_LOG[k] = msg_received[j];
-                }
-            }
-            else
-            {
-                ESP_LOGE(TAG, "else, CIRCULOU");
-                int j = begin_msg_received, k = 0;
-                while (j != end_msg_received - 2)
-                {
-                    if (msg_received[j] == '\0')
-                        msg_received_LOG[k] = '/';
-                    else
-                        msg_received_LOG[k] = msg_received[j];
-                    k++;
-                    j++;
-                    if (j > MSG_RECEIVED_BUFF_SIZE)
-                        j = 0;
-                }
+                if (msg_received[j] == '\0')
+                    msg_received_LOG[k] = '/';
+                else
+                    msg_received_LOG[k] = msg_received[j];
             }
 
             if (StrContainsSubstr(msg_received_LOG, RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)))
@@ -142,6 +137,8 @@ void uart2_task(void *pvParameters)
     ESP_LOGI(TAG, "Initializing uart 2 task");
     uart_event_t event;
     ESP_LOGI(TAG, "uart_event_task init");
+    uint16_t old_begin = 0;
+    bool big_receive = false;
     for (;;)
     {
         if (xQueueReceive(uart_queue, (void *)&event, portMAX_DELAY))
@@ -150,6 +147,7 @@ void uart2_task(void *pvParameters)
             {
             case UART_DATA:
                 received = true;
+                old_begin = begin_msg_received;
                 begin_msg_received = end_msg_received;
                 if (end_msg_received + event.size <= MSG_RECEIVED_BUFF_SIZE)
                 {
@@ -157,11 +155,25 @@ void uart2_task(void *pvParameters)
                 }
                 else
                 {
-                    end_msg_received = (end_msg_received + event.size) - MSG_RECEIVED_BUFF_SIZE;
+                    begin_msg_received = 0;
+                    end_msg_received = event.size;
                 }
                 msg_received_size = event.size;
                 uart_read_bytes(uart_sim7070g, &(msg_received[begin_msg_received]), msg_received_size, portMAX_DELAY);
                 uart_flush_input(uart_sim7070g);
+                if (StrContainsSubstr(&(msg_received[begin_msg_received]), SMCONF, msg_received_size, SIZE(SMCONF)))
+                {
+                    big_receive = true;
+                    received = false;
+                }
+                else
+                {
+                    if (big_receive)
+                    {
+                        begin_msg_received = old_begin;
+                        big_receive = false;
+                    }
+                }
                 break;
 
             case UART_FIFO_OVF:
@@ -171,7 +183,7 @@ void uart2_task(void *pvParameters)
                 break;
 
             case UART_BUFFER_FULL:
-                ESP_LOGI(TAG, "uart buffer full");
+                ESP_LOGW(TAG, "uart buffer full");
                 uart_flush_input(uart_sim7070g);
                 xQueueReset(uart_queue);
                 break;

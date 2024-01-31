@@ -468,7 +468,8 @@ bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain
         ESP_LOGI("CMD", "writing send packet command...");
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-    if (StrContainsSubstr(msg_received, ">", 4, 1))
+    ESP_LOGI("CMD", "send packet command.");
+    if (StrContainsSubstr(&(msg_received[begin_msg_received]), ">", msg_received_size, 1))
     {
         message_pointer_pos = 0;
         for (int i = 0; i < strlen(msg); i++)

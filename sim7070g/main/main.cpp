@@ -82,12 +82,12 @@ extern "C"
 
         MQTTInit();
 
-        // while (1)
-        // {
-        //     ESP_LOGI(TAG, "Sending MQTT msg command...");
-        //     SendPacket("Sim7070g", "5", QOS_0, 1, "Hello");
-        //     vTaskDelay(1000 / portTICK_PERIOD_MS);
-        // }
+        while (1)
+        {
+            ESP_LOGI(TAG, "Sending MQTT msg command...");
+            SendPacket("Sim7070g", "5", QOS_0, 1, "Hello");
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        }
     }
 }
 
@@ -232,7 +232,6 @@ void PDNManualActivation()
     ESP_LOGI(TAG, "Sending APP network active command...");
     while (!APPNetworkActive(pdp, ACTIVED))
     {
-        AppNetworkActiveReadCMD();
         ESP_LOGI(TAG, "Sending APP network active command...");
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
@@ -316,7 +315,6 @@ void MQTTInit()
     {
         ESP_LOGI(TAG, "Connecting to broker...");
         vTaskDelay(2000 / portTICK_PERIOD_MS);
-        TestCMDMQTTParameters();
     }
     ESP_LOGI(TAG, "Connected to broker.\n");
 }
