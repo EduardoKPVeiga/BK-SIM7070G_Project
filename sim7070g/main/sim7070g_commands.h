@@ -76,6 +76,7 @@
 // Responses
 #define RESP_OK "OK"
 #define RESP_ERROR "ERROR"
+#define RESP_DEACTIVE "DEACTIVE"
 
 enum PDP_type_enum
 {
@@ -198,6 +199,14 @@ void CloseBracket();
  * @return void
  */
 void EnumToCharWriteBuff(uint8_t value);
+
+/**
+ * PDP index from int to char
+ * @author Eduardo Veiga
+ * @param pdpidx : int
+ * @return void
+ */
+void AddPDPIndex(int pdpidx);
 
 /*
  * Connect to MQTT broker
@@ -434,12 +443,12 @@ bool QueryNetworkInfo();
 /**
  * PDP configure
  * @author Eduardo Veiga
- * @param pdpidx : const char ('0', '1', '2', '3')
+ * @param pdpidx : int (0, 1, 2, 3)
  * @param ip_type : const char ('0', '1', '2', '3', '4')
  * @param apn : const char*
  * @return true if successful, false otherwise
  */
-bool PDPConfigure(const char pdpidx, const char ip_type, const char *apn);
+bool PDPConfigure(int pdpidx, const char ip_type, const char *apn);
 
 /**
  * PDP configure read command
@@ -503,7 +512,7 @@ bool SubscribePacket(const char *topic, Qos_enum qos);
  * @author Eduardo Veiga
  * @return true if successful, false otherwise
  */
-bool AppNetworkActiveReadCMD();
+bool AppNetworkActiveReadCMD(int pdpidx);
 
 /**
  * Get UTC time
@@ -515,11 +524,11 @@ bool GetSynchronizeUTCTime();
 /**
  * Open wireless connection parameter 0 is PDP index, parameter 1 means active.
  * @author Eduardo Veiga
- * @param pdpidx : const char ('0', '1', '2', '3')
+ * @param pdpidx : int
  * @param action : Action_enum
  * @return true if successful, false otherwise
  */
-bool APPNetworkActive(const char pdpidx, Action_enum action);
+bool APPNetworkActive(int pdpidx, Action_enum action);
 
 /**
  * Set phone functionality

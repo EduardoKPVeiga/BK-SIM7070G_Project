@@ -161,7 +161,9 @@ void uart2_task(void *pvParameters)
                 msg_received_size = event.size;
                 uart_read_bytes(uart_sim7070g, &(msg_received[begin_msg_received]), msg_received_size, portMAX_DELAY);
                 uart_flush_input(uart_sim7070g);
-                if (StrContainsSubstr(&(msg_received[begin_msg_received]), SMCONF, msg_received_size, SIZE(SMCONF)))
+                if (StrContainsSubstr(&(msg_received[begin_msg_received]), ">", msg_received_size, 1))
+                    break;
+                if (!StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_OK, msg_received_size, SIZE(RESP_OK)) && !StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)))
                 {
                     big_receive = true;
                     received = false;
@@ -171,6 +173,7 @@ void uart2_task(void *pvParameters)
                     if (big_receive)
                     {
                         begin_msg_received = old_begin;
+                        msg_received_size = end_msg_received - begin_msg_received;
                         big_receive = false;
                     }
                 }

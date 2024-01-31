@@ -4,7 +4,7 @@ static const char TAG[] = "Main";
 
 uint8_t cmd_failed_counter = 0;
 
-const char pdp = '0';
+int pdp = 0;
 const char ip_type = '1'; // Internet Protocol Version 4
 
 // MQTT parameters
@@ -166,7 +166,7 @@ void PDNAutoActivation()
     ESP_LOGI(TAG, "Sending APP network active command...");
     while (!APPNetworkActive(pdp, ACTIVED))
     {
-        AppNetworkActiveReadCMD();
+        AppNetworkActiveReadCMD(pdp);
         ESP_LOGI(TAG, "Sending APP network active command...");
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
@@ -236,6 +236,15 @@ void PDNManualActivation()
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
     ESP_LOGI(TAG, "APP network actived.\n");
+
+    ESP_LOGI(TAG, "Sending APP network active read command...");
+    while (!AppNetworkActiveReadCMD(pdp))
+    {
+        ESP_LOGI(TAG, "Sending app network active command...");
+        APPNetworkActive(pdp, ACTIVED);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        ESP_LOGI(TAG, "Sending app network active read command...");
+    }
 }
 
 void GNSSInit()

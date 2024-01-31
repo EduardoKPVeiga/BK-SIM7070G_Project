@@ -90,6 +90,18 @@ void EnumToCharWriteBuff(uint8_t value)
     message_pointer_pos++;
 }
 
+void AddPDPIndex(int pdpidx)
+{
+    if (pdpidx == 0)
+        message_buff[message_pointer_pos] = '0';
+    else if (pdpidx == 1)
+        message_buff[message_pointer_pos] = '1';
+    else if (pdpidx == 2)
+        message_buff[message_pointer_pos] = '2';
+    else if (pdpidx == 3)
+        message_buff[message_pointer_pos] = '3';
+    message_pointer_pos++;
+}
 // COMMANDS ==============================================================================
 // MQTT ----------------------------------------------------------------------------------
 bool MQTTConnect()
@@ -601,7 +613,6 @@ bool PingIPV4(const char *ipaddress, const char *count, const char *size, const 
     QuotationMarks();
 
     EndCMD();
-
     return SendCMD();
 }
 
@@ -965,7 +976,7 @@ bool QueryNetworkInfo()
     return SendCMD();
 }
 
-bool PDPConfigure(const char pdpidx, const char ip_type, const char *apn)
+bool PDPConfigure(int pdpidx, const char ip_type, const char *apn)
 {
     // AT+CNCFG=0,1,"ctnb"
     BeginCMD();
@@ -977,8 +988,7 @@ bool PDPConfigure(const char pdpidx, const char ip_type, const char *apn)
     }
     WriteCMD();
 
-    message_buff[message_pointer_pos] = pdpidx;
-    message_pointer_pos++;
+    AddPDPIndex(pdpidx);
 
     ValueDelimiter();
 
@@ -1074,7 +1084,7 @@ bool GetSynchronizeUTCTime()
 // ---------------------------------------------------------------------------------------
 
 // IP App --------------------------------------------------------------------------------
-bool APPNetworkActive(const char pdpidx, Action_enum action)
+bool APPNetworkActive(int pdpidx, Action_enum action)
 {
     // AT+CNACT=<pdpidx>,<action>
     BeginCMD();
@@ -1086,10 +1096,7 @@ bool APPNetworkActive(const char pdpidx, Action_enum action)
     }
 
     WriteCMD();
-
-    message_buff[message_pointer_pos] = pdpidx;
-    message_pointer_pos++;
-
+    AddPDPIndex(pdpidx);
     ValueDelimiter();
 
     if (action == DEACTIVED)
@@ -1100,16 +1107,10 @@ bool APPNetworkActive(const char pdpidx, Action_enum action)
         message_buff[message_pointer_pos] = '2';
     message_pointer_pos++;
     EndCMD();
-
-    char *deactived = "DEACTIVE";
-    if (SendCMD())
-    {
-        return (StrContainsSubstr(msg_received, deactived, MSG_RECEIVED_BUFF_SIZE, strlen("DEACTIVE"))) ? false : true;
-    }
-    return false;
+    return SendCMD();
 }
 
-bool AppNetworkActiveReadCMD()
+bool AppNetworkActiveReadCMD(int pdpidx)
 {
     // AT+CNACT?
     BeginCMD();
@@ -1120,7 +1121,35 @@ bool AppNetworkActiveReadCMD()
     }
     ReadCMD();
     EndCMD();
-    return SendCMD();
+    if (SendCMD())
+    {
+        char pdp = '\0';
+        if (pdpidx == 0)
+            pdp = '0';
+        else if (pdpidx == 1)
+            pdp = '1';
+        else if (pdpidx == 2)
+            pdp = '2';
+        else if (pdpidx == 3)
+            pdp = '3';
+
+        for (int i = begin_msg_received; i < end_msg_received; i++)
+        {
+            if (msg_received[i] == ':')
+            {
+                if (msg_received[i + 2] == pdp)
+                {
+                    if (msg_received[i + 2 + 2] == '0')
+                        return false;
+                    else if (msg_received[i + 2 + 2] == '1')
+                        return true;
+                    else
+                        return false;
+                }
+            }
+        }
+    }
+    return false;
 }
 // ---------------------------------------------------------------------------------------
 
