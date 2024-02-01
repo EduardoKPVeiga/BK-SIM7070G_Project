@@ -1,2 +1,2 @@
-idf_component_register(SRCS "source\\uart_sim7070g.cpp" "source\\pins.cpp" "source\\str.cpp" "source\\main.cpp" "source\\sim7070g_commands.cpp"
+idf_component_register(SRCS "source\\uart_sim7070g.cpp" "source\\pins.cpp" "source\\str.cpp" "source\\main.cpp" "source\\sim7070g_commands.cpp" "source\\class\\Interface.cpp" "source\\class\\Gsm.cpp"
                     INCLUDE_DIRS ".")

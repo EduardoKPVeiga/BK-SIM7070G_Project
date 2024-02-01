@@ -10,29 +10,6 @@
 #include "uart_sim7070g.h"
 #include <stdlib.h>
 
-#define DELAY_ERROR_MSG 1000 / portTICK_PERIOD_MS
-
-/**
- * Configure and initialize MQTT
- * @author Eduardo Veiga
- * @return void
- */
-void MQTTInit();
-
-/**
- * Configure and initialize GPS
- * @author Eduardo Veiga
- * @return void
- */
-void GNSSInit();
-
-/**
- * Configure and initialize GPRS
- * @author Eduardo Veiga
- * @return void
- */
-void GPRSInit();
-
 /**
  * Extract the latitude from message received
  * @author Eduardo Veiga
@@ -60,20 +37,6 @@ double GetAltitude();
  * @return int
  */
 int GetSatellitesInView();
-
-/**
- * Initialize GSM communication automatically
- * @author Eduardo Veiga
- * @return void
- */
-void PDNAutoActivation();
-
-/**
- * Configure and initialize GSM communication
- * @author Eduardo Veiga
- * @return void
- */
-void PDNManualActivation();
 
 /**
  * ESP_LOGI the coordinate information

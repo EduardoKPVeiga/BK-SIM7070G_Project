@@ -9,7 +9,7 @@ uint16_t begin_msg_received = 0;
 uint16_t end_msg_received = 0;
 bool received = false;
 
-const char *TAG = "Uart";
+static const char *TAG = "Uart";
 
 char message_buff[MESSAGE_BUFF_MAX_SIZE] = {0};
 uint16_t message_pointer_pos = 0;
