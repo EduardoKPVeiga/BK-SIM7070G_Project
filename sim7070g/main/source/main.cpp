@@ -1,4 +1,4 @@
-#include "main.h"
+#include "../include/main.h"
 
 static const char TAG[] = "Main";
 
@@ -48,28 +48,11 @@ extern "C"
         while (!EchoBackOff())
         {
             ESP_LOGI(TAG, "Sending echo command...");
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            vTaskDelay(DELAY_ERROR_MSG);
         }
         ESP_LOGI(TAG, "Echo mode disabled.\n");
 
         // GNSSInit();
-
-        // while (1)
-        // {
-        //     ESP_LOGI(TAG, "Writing get GNSS command...");
-        //     while (!GetGNSS())
-        //     {
-        //         ESP_LOGI(TAG, "Writing get GNSS command...");
-        //         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        //     }
-        //     ESP_LOGI(TAG, "Get GNSS.");
-
-        //     ESP_LOGI(TAG, "Latitude:\t%f", GetLatitude());
-        //     ESP_LOGI(TAG, "Longitude:\t%f", GetLongitude());
-        //     ESP_LOGI(TAG, "Altitude:\t%f", GetAltitude());
-        //     ESP_LOGI(TAG, "Satelites:\t%d", GetSatellitesInView());
-        //     vTaskDelay(2000 / portTICK_PERIOD_MS);
-        // }
 
         PDNManualActivation();
 
@@ -80,14 +63,23 @@ extern "C"
         }
         ESP_LOGI(TAG, "Ping IPV4 send.\n");
 
-        MQTTInit();
-
         // while (1)
         // {
-        //     ESP_LOGI(TAG, "Sending MQTT msg command...");
-        //     SendPacket("Sim7070g", "5", QOS_0, 1, "Hello");
-        //     vTaskDelay(1000 / portTICK_PERIOD_MS);
+        //     ESP_LOGI(TAG, "Writing get gsm location command...");
+        //     if (GetGSMLocation(1, '0'))
+        //         ESP_LOGI(TAG, "Get location.");
+        //     else
+        //         ESP_LOGE(TAG, "failed.");
+        //     vTaskDelay(DELAY_ERROR_MSG * 2);
         // }
+
+        MQTTInit();
+        while (1)
+        {
+            ESP_LOGI(TAG, "Sending MQTT msg command...");
+            SendPacket("Sim7070g", "5", QOS_0, 1, "Hello");
+            vTaskDelay(DELAY_ERROR_MSG);
+        }
     }
 }
 
@@ -97,7 +89,7 @@ void PDNAutoActivation()
     while (!CheckSIMCard())
     {
         ESP_LOGI(TAG, "Sending check SIM card command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     if (StrContainsSubstr(msg_received, "READY", MSG_RECEIVED_BUFF_SIZE, strlen("READY")))
         ESP_LOGI(TAG, "SIM card READY.\n");
@@ -108,7 +100,7 @@ void PDNAutoActivation()
     while (!SetNetworkType(NB_IOT))
     {
         ESP_LOGI(TAG, "Sending set network type command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Network selected.\n");
 
@@ -123,28 +115,28 @@ void PDNAutoActivation()
     while (!CheckPSService())
     {
         ESP_LOGI(TAG, "Sending check PS service command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
 
     ESP_LOGI(TAG, "Sending query nertwork information command...");
     while (!QueryNetworkInfo())
     {
         ESP_LOGI(TAG, "Sending query nertwork information command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
 
     ESP_LOGI(TAG, "Sending get nertwork APN command...");
     while (!GetNetworkAPN())
     {
         ESP_LOGI(TAG, "Sending get nertwork APN command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
 
     ESP_LOGI(TAG, "Sending PDP configure command...");
     while (!PDPConfigure(pdp, ip_type, apn_vivo))
     {
         ESP_LOGI(TAG, "Sending PDP configure command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     PDPConfigureReadCMD();
     ESP_LOGI(TAG, "PDP configured.\n");
@@ -153,14 +145,14 @@ void PDNAutoActivation()
     while (!SetEPSNetworkStatus('1'))
     {
         ESP_LOGI(TAG, "Sending set EPS network status command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Set EPS network status.\n");
 
     // while (!BandTest())
     // {
     //     ESP_LOGI(TAG, "Sending band test command...");
-    //     vTaskDelay(10 / portTICK_PERIOD_MS);
+    //     vTaskDelay(DELAY_ERROR_MSG);
     // }
 
     ESP_LOGI(TAG, "Sending APP network active command...");
@@ -176,92 +168,116 @@ void PDNAutoActivation()
 void PDNManualActivation()
 {
     // Disable RF
-    ESP_LOGI(TAG, "Sending set phone functionality command...");
+    ESP_LOGI(TAG, "writing set phone functionality command...");
     while (!SetPhoneFunc(MIN_FUNC))
     {
-        ESP_LOGI(TAG, "Sending set phone functionality command...");
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        ESP_LOGI(TAG, "writing set phone functionality command...");
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Set phone.\n");
 
     // Set the APN manually. Some operators needtoset APN first when registering the network.
-    ESP_LOGI(TAG, "Sending set PDP context command...");
+    ESP_LOGI(TAG, "writing set PDP context command...");
     while (!PDPContext(cid, pdp_type, apn_vivo))
     {
-        ESP_LOGI(TAG, "Sending set PDP context command...");
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        ESP_LOGI(TAG, "writing set PDP context command...");
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Set PDP context.\n");
 
     // Enable RF
-    ESP_LOGI(TAG, "Sending set phone functionality command...");
+    ESP_LOGI(TAG, "writing set phone functionality command...");
     while (!SetPhoneFunc(FULL_FUNC))
     {
-        ESP_LOGI(TAG, "Sending set phone functionality command...");
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        ESP_LOGI(TAG, "writing set phone functionality command...");
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Set phone.\n");
 
     // Check PS service. 1 indicates PS has attached.
-    ESP_LOGI(TAG, "Sending check PS service command...");
+    ESP_LOGI(TAG, "writing check PS service command...");
     while (!CheckPSService())
     {
         ESP_LOGI(TAG, "Sending check PS service command...");
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
 
     // Query the APN delivered by the network after theCAT-M or NB-IOT network is successfullyregistered
-    ESP_LOGI(TAG, "Sending get nertwork APN command...");
+    ESP_LOGI(TAG, "writing get nertwork APN command...");
     while (!GetNetworkAPN())
     {
         ESP_LOGI(TAG, "Sending get nertwork APN command...");
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
 
     // Before activation please use AT+CNCFGtoset APN\user name\password if needed.
-    ESP_LOGI(TAG, "Sending PDP configure command...");
+    ESP_LOGI(TAG, "writing PDP configure command...");
     while (!PDPConfigure(pdp, ip_type, apn_vivo))
     {
-        ESP_LOGI(TAG, "Sending PDP configure command...");
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        ESP_LOGI(TAG, "writing PDP configure command...");
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     PDPConfigureReadCMD();
     ESP_LOGI(TAG, "PDP configured.\n");
 
+    ESP_LOGI(TAG, "writing get band scan configuration command...");
+    while (!GetBandScanConfig())
+    {
+        ESP_LOGI(TAG, "writing get band scan configuration command...");
+        vTaskDelay(DELAY_ERROR_MSG);
+    }
+
+    ESP_LOGI(TAG, "writing get engineering mode information command...");
+    while (!GetEngineeringModeInfo())
+    {
+        ESP_LOGI(TAG, "writing get engineering mode information command...");
+        vTaskDelay(DELAY_ERROR_MSG);
+    }
+
     // Activate network, Activate 0th PDP.
-    ESP_LOGI(TAG, "Sending APP network active command...");
+    ESP_LOGI(TAG, "writing APP network active command...");
     while (!APPNetworkActive(pdp, ACTIVED))
     {
-        ESP_LOGI(TAG, "Sending APP network active command...");
+        ESP_LOGI(TAG, "writing APP network active command...");
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
     ESP_LOGI(TAG, "APP network actived.\n");
 
-    ESP_LOGI(TAG, "Sending APP network active read command...");
+    ESP_LOGI(TAG, "writing APP network active read command...");
     while (!AppNetworkActiveReadCMD(pdp))
     {
-        ESP_LOGI(TAG, "Sending app network active command...");
+        ESP_LOGI(TAG, "writing app network active command...");
         APPNetworkActive(pdp, ACTIVED);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        ESP_LOGI(TAG, "Sending app network active read command...");
+        vTaskDelay(DELAY_ERROR_MSG);
+        ESP_LOGI(TAG, "writing app network active read command...");
     }
 }
 
 void GNSSInit()
 {
+    ESP_LOGI(TAG, "writing set GNSS power mode command...");
     while (!SetGNSSPowerMode(true))
     {
-        ESP_LOGI(TAG, "Sending set GNSS power mode command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        ESP_LOGI(TAG, "writing set GNSS power mode command...");
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Power mode set.");
 
+    ESP_LOGI(TAG, "writing set GNSS work mode command...");
     while (!SetGNSSWorkMode(gps_mode, plo_mode, bd_mode, gal_mode, qzss_mode))
     {
-        ESP_LOGI(TAG, "Sending set GNSS work mode command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        ESP_LOGI(TAG, "writing set GNSS work mode command...");
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Work mode set.");
+
+    // ESP_LOGI(TAG, "writing set high accuracy mode command...");
+    // while (!SetHighAccuracyGNSSMode())
+    // {
+    //     ESP_LOGI(TAG, "writing set high accuracy mode command...");
+    //     vTaskDelay(DELAY_ERROR_MSG);
+    // }
+    // ESP_LOGI(TAG, "High accuracy mode set.");
 }
 
 void MQTTInit()
@@ -269,55 +285,55 @@ void MQTTInit()
     while (!SetClientID(client_id))
     {
         ESP_LOGI(TAG, "Sending client ID...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Set client ID.\n");
 
     while (!SetBrokerURL(broker_url, broker_port))
     {
         ESP_LOGI(TAG, "Sending broker URL...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Set broker URL.\n");
 
     while (!MQTTSubscribeTopic(mqtt_topic))
     {
         ESP_LOGI(TAG, "Subscrinbing MQTT topic...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Topic subscribe.\n");
 
     while (!SetAsyncmode(async_mode))
     {
         ESP_LOGI(TAG, "Sending set asyncmode command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Asyncmode set.\n");
 
     while (!SetSubhex(sub_hex))
     {
         ESP_LOGI(TAG, "Sending set data type...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Data type set.\n");
 
     while (!SetMessageDetails(details))
     {
         ESP_LOGI(TAG, "Sending message details command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Message details set.\n");
 
     while (!SetQOS(qos_level))
     {
         ESP_LOGI(TAG, "Sending set QOS command");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "QOS set level.\n");
 
     while (!TestCMDMQTTParameters())
     {
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
 
     while (!MQTTConnect())
@@ -334,7 +350,7 @@ void GPRSInit()
     while (!PDPContext(cid, pdp_type, apn_vivo))
     {
         ESP_LOGI(TAG, "Sending PDP context command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "PDP context set.\n");
 
@@ -342,14 +358,14 @@ void GPRSInit()
     while (!GetPDPContext())
     {
         ESP_LOGI(TAG, "Sending get PDP context command...");
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
 
     ESP_LOGI(TAG, "Sending GPRS attachment command...");
     while (!GPRSAttachment(true))
     {
         ESP_LOGI(TAG, "Sending GPRS attachment command...");
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "GPRS attached.\n");
 
@@ -357,7 +373,7 @@ void GPRSInit()
     while (!CheckPSService())
     {
         ESP_LOGI(TAG, "Sending check PS service command...");
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(DELAY_ERROR_MSG);
     }
 }
 
@@ -365,7 +381,7 @@ double GetLatitude()
 {
     int cont_comma = 0;
     char latitude[11] = {'\0'};
-    for (int i = SIZE(CGNSINF) + 2, j = 0; i < strlen(msg_received); i++)
+    for (int i = begin_msg_received + SIZE(CGNSINF) + 2, j = 0; i < end_msg_received; i++)
     {
         if (msg_received[i] == ',')
             cont_comma++;
@@ -382,7 +398,7 @@ double GetLongitude()
 {
     int cont_comma = 0;
     char longitude[12] = {'\0'};
-    for (int i = SIZE(CGNSINF) + 2, j = 0; i < strlen(msg_received); i++)
+    for (int i = begin_msg_received + SIZE(CGNSINF) + 2, j = 0; i < end_msg_received; i++)
     {
         if (msg_received[i] == ',')
             cont_comma++;
@@ -399,7 +415,7 @@ double GetAltitude()
 {
     int cont_comma = 0;
     char altitude[9] = {'\0'};
-    for (int i = SIZE(CGNSINF) + 2, j = 0; i < strlen(msg_received); i++)
+    for (int i = begin_msg_received + SIZE(CGNSINF) + 2, j = 0; i < end_msg_received; i++)
     {
         if (msg_received[i] == ',')
             cont_comma++;
@@ -416,7 +432,7 @@ int GetSatellitesInView()
 {
     int cont_comma = 0;
     char satellites[3] = {'\0'};
-    for (int i = SIZE(CGNSINF) + 2, j = 0; i < strlen(msg_received); i++)
+    for (int i = begin_msg_received + SIZE(CGNSINF) + 2, j = 0; i < end_msg_received; i++)
     {
         if (msg_received[i] == ',')
             cont_comma++;
@@ -431,16 +447,8 @@ int GetSatellitesInView()
 
 void PrintCoord()
 {
-    while (1)
-    {
-        while (!GetGNSS())
-        {
-            ESP_LOGI(TAG, "Sending get GNSS command...");
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-        }
-        ESP_LOGI(TAG, "Latitude:\t%f", GetLatitude());
-        ESP_LOGI(TAG, "Longitude:\t%f", GetLongitude());
-        ESP_LOGI(TAG, "Altitude:\t%f", GetAltitude());
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
-    }
+    ESP_LOGI(TAG, "Latitude:\t%f", GetLatitude());
+    ESP_LOGI(TAG, "Longitude:\t%f", GetLongitude());
+    ESP_LOGI(TAG, "Altitude:\t%f", GetAltitude());
+    ESP_LOGI(TAG, "Satellites:\t%d", GetSatellitesInView());
 }

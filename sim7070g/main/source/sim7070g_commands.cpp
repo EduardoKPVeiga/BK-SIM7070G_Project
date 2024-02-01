@@ -1,4 +1,4 @@
-#include "sim7070g_commands.h"
+#include "../include/sim7070g_commands.h"
 
 extern char message_buff[MESSAGE_BUFF_MAX_SIZE];
 extern uint16_t message_pointer_pos;
@@ -57,22 +57,6 @@ void TestCMD()
     message_pointer_pos++;
 }
 
-void OpenBracket()
-{
-    /*
-    message_buff[message_pointer_pos] = OPEN_BRACKET[0];
-    message_pointer_pos++;
-    */
-}
-
-void CloseBracket()
-{
-    /*
-    message_buff[message_pointer_pos] = CLOSE_BRACKET[0];
-    message_pointer_pos++;
-    */
-}
-
 void EnumToCharWriteBuff(uint8_t value)
 {
     if (value == 0)
@@ -102,72 +86,61 @@ void AddPDPIndex(int pdpidx)
         message_buff[message_pointer_pos] = '3';
     message_pointer_pos++;
 }
+
+void WriteStrIntoBuff(const char *str)
+{
+    QuotationMarks();
+    for (int i = 0; i < strlen(str); i++)
+    {
+        message_buff[message_pointer_pos] = str[i];
+        message_pointer_pos++;
+    }
+    QuotationMarks();
+}
+
+void WriteCmdIntoBuff(const char *cmd, CMD_action_enum action)
+{
+    for (int i = 0; i < strlen(cmd); i++)
+    {
+        message_buff[message_pointer_pos] = cmd[i];
+        message_pointer_pos++;
+    }
+    if (action == WRITE)
+        WriteCMD();
+    else if (action == READ)
+        ReadCMD();
+    else if (action == TEST)
+        TestCMD();
+}
 // COMMANDS ==============================================================================
 // MQTT ----------------------------------------------------------------------------------
 bool MQTTConnect()
 {
     // AT+SMCONN
     BeginCMD();
-
-    for (int i = 0; i < SIZE(SMCONN); i++)
-    {
-        message_buff[message_pointer_pos] = SMCONN[i];
-        message_pointer_pos++;
-    }
-
+    WriteCmdIntoBuff(SMCONN, EXE);
     EndCMD();
     return SendCMD();
 }
 
-void MQTTDisconnect()
+bool MQTTDisconnect()
 {
     // AT+SMDISC
     BeginCMD();
-
-    for (int i = 0; i < SIZE(SMDISC); i++)
-    {
-        message_buff[message_pointer_pos] = SMDISC[i];
-        message_pointer_pos++;
-    }
-
+    WriteCmdIntoBuff(SMDISC, EXE);
     EndCMD();
-
-    SendCMD();
+    return SendCMD();
 }
 
 bool MQTTSubscribeTopic(const char *topic)
 {
     // AT+SMCONF="TOPIC","will topic"
     BeginCMD();
-
-    for (int i = 0; i < SIZE(SMCONF); i++)
-    {
-        message_buff[message_pointer_pos] = SMCONF[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
-
-    QuotationMarks();
-    for (int i = 0; i < SIZE(TOPIC); i++)
-    {
-        message_buff[message_pointer_pos] = TOPIC[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteCmdIntoBuff(SMCONF, WRITE);
+    WriteStrIntoBuff(TOPIC);
     ValueDelimiter();
-
-    QuotationMarks();
-    for (int i = 0; i < strlen(topic); i++)
-    {
-        message_buff[message_pointer_pos] = topic[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteStrIntoBuff(topic);
     EndCMD();
-
     return SendCMD();
 }
 
@@ -175,35 +148,11 @@ bool SetClientID(const char *id)
 {
     // AT+SMCONF="CLIENTID","id"
     BeginCMD();
-
-    for (int i = 0; i < SIZE(SMCONF); i++)
-    {
-        message_buff[message_pointer_pos] = SMCONF[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
-
-    QuotationMarks();
-    for (int i = 0; i < SIZE(CLIENTID); i++)
-    {
-        message_buff[message_pointer_pos] = CLIENTID[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteCmdIntoBuff(SMCONF, WRITE);
+    WriteStrIntoBuff(CLIENTID);
     ValueDelimiter();
-
-    QuotationMarks();
-    for (int i = 0; i < strlen(id); i++)
-    {
-        message_buff[message_pointer_pos] = id[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteStrIntoBuff(id);
     EndCMD();
-
     return SendCMD();
 }
 
@@ -211,25 +160,9 @@ bool SetBrokerURL(const char *address, const char *port)
 {
     // AT+SMCONF="URL","test.mosquitto.org","1883"
     BeginCMD();
-
-    for (int i = 0; i < SIZE(SMCONF); i++)
-    {
-        message_buff[message_pointer_pos] = SMCONF[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
-
-    QuotationMarks();
-    for (int i = 0; i < SIZE(URL); i++)
-    {
-        message_buff[message_pointer_pos] = URL[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteCmdIntoBuff(SMCONF, WRITE);
+    WriteStrIntoBuff(URL);
     ValueDelimiter();
-
     // QuotationMarks();
     for (int i = 0; i < strlen(address); i++)
     {
@@ -237,9 +170,7 @@ bool SetBrokerURL(const char *address, const char *port)
         message_pointer_pos++;
     }
     // QuotationMarks();
-
     ValueDelimiter();
-
     // QuotationMarks();
     for (int i = 0; i < strlen(port); i++)
     {
@@ -247,9 +178,7 @@ bool SetBrokerURL(const char *address, const char *port)
         message_pointer_pos++;
     }
     // QuotationMarks();
-
     EndCMD();
-
     return SendCMD();
 }
 
@@ -275,23 +204,8 @@ bool SetAsyncmode(bool mode)
 {
     // AT+SMCONF="ASYNCMODE",1
     BeginCMD();
-
-    for (int i = 0; i < SIZE(SMCONF); i++)
-    {
-        message_buff[message_pointer_pos] = SMCONF[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
-
-    QuotationMarks();
-    for (int i = 0; i < SIZE(ASYNCMODE); i++)
-    {
-        message_buff[message_pointer_pos] = ASYNCMODE[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteCmdIntoBuff(SMCONF, WRITE);
+    WriteStrIntoBuff(ASYNCMODE);
     ValueDelimiter();
 
     message_buff[message_pointer_pos] = mode ? '1' : '0';
@@ -305,26 +219,13 @@ bool SetSubhex(bool data_hex)
 {
     // AT+SMCONF="SUBHEX",1
     BeginCMD();
-    for (int i = 0; i < SIZE(SMCONF); i++)
-    {
-        message_buff[message_pointer_pos] = SMCONF[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
-
-    QuotationMarks();
-    for (int i = 0; i < SIZE(SUBHEX); i++)
-    {
-        message_buff[message_pointer_pos] = SUBHEX[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteCmdIntoBuff(SMCONF, WRITE);
+    WriteStrIntoBuff(SUBHEX);
     ValueDelimiter();
 
     message_buff[message_pointer_pos] = data_hex ? '1' : '0';
     message_pointer_pos++;
+
     EndCMD();
     return SendCMD();
 }
@@ -333,26 +234,13 @@ bool SetRetain(bool mode)
 {
     // AT+SMCONF="RETAIN",1
     BeginCMD();
-    for (int i = 0; i < SIZE(SMCONF); i++)
-    {
-        message_buff[message_pointer_pos] = SMCONF[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
-
-    QuotationMarks();
-    for (int i = 0; i < SIZE(RETAIN); i++)
-    {
-        message_buff[message_pointer_pos] = RETAIN[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteCmdIntoBuff(SMCONF, WRITE);
+    WriteStrIntoBuff(RETAIN);
     ValueDelimiter();
 
     message_buff[message_pointer_pos] = mode ? '1' : '0';
     message_pointer_pos++;
+
     EndCMD();
     return SendCMD();
 }
@@ -361,32 +249,10 @@ bool SetMessageDetails(const char *details)
 {
     // AT+SMCONF="MESSAGE","will message"
     BeginCMD();
-    for (int i = 0; i < SIZE(SMCONF); i++)
-    {
-        message_buff[message_pointer_pos] = SMCONF[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
-
-    QuotationMarks();
-    for (int i = 0; i < SIZE(MESSAGE); i++)
-    {
-        message_buff[message_pointer_pos] = MESSAGE[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteCmdIntoBuff(SMCONF, WRITE);
+    WriteStrIntoBuff(MESSAGE);
     ValueDelimiter();
-
-    QuotationMarks();
-    for (int i = 0; i < strlen(details); i++)
-    {
-        message_buff[message_pointer_pos] = details[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteStrIntoBuff(details);
     EndCMD();
     return SendCMD();
 }
@@ -395,22 +261,8 @@ bool SetQOS(Qos_enum level)
 {
     // AT+SMCONF="QOS",1
     BeginCMD();
-    for (int i = 0; i < SIZE(SMCONF); i++)
-    {
-        message_buff[message_pointer_pos] = SMCONF[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
-
-    QuotationMarks();
-    for (int i = 0; i < SIZE(QOS); i++)
-    {
-        message_buff[message_pointer_pos] = QOS[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteCmdIntoBuff(SMCONF, WRITE);
+    WriteStrIntoBuff(QOS);
     ValueDelimiter();
 
     if (level == QOS_0)
@@ -431,23 +283,8 @@ bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain
 {
     // AT+SMPUB=<topic>,<content length>,<qos>,<retain><CR>message is enteredQuit edit mode if message length equals to <content length>
     BeginCMD();
-
-    for (int i = 0; i < SIZE(SMPUB); i++)
-    {
-        message_buff[message_pointer_pos] = SMPUB[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
-
-    QuotationMarks();
-    for (int i = 0; i < strlen(topic); i++)
-    {
-        message_buff[message_pointer_pos] = topic[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteCmdIntoBuff(SMPUB, WRITE);
+    WriteStrIntoBuff(topic);
     ValueDelimiter();
 
     for (int i = 0; i < strlen(length); i++)
@@ -497,46 +334,21 @@ bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain
 
 bool TestSendPacket()
 {
+    // AT+SMPUB=?
     BeginCMD();
-    for (int i = 0; i < SIZE(SMPUB); i++)
-    {
-        message_buff[message_pointer_pos] = SMPUB[i];
-        message_pointer_pos++;
-    }
-    TestCMD();
-    EndCMD();
-    return SendCMD();
-}
-
-bool MQTTReceiveSubscribeData()
-{
-    message_pointer_pos = 0;
-    for (int i = 0; i < SIZE(SMSUB); i++)
-    {
-        message_buff[message_pointer_pos] = SMSUB[i];
-        message_pointer_pos++;
-    }
+    WriteCmdIntoBuff(SMPUB, TEST);
     EndCMD();
     return SendCMD();
 }
 
 bool SubscribePacket(const char *topic, Qos_enum qos)
 {
+    // AT+SMSUB="information",1
     BeginCMD();
-    for (int i = 0; i < SIZE(SMSUB); i++)
-    {
-        message_buff[message_pointer_pos] = SMSUB[i];
-        message_pointer_pos++;
-    }
-    WriteCMD();
-    QuotationMarks();
-    for (int i = 0; i < strlen(topic); i++)
-    {
-        message_buff[message_pointer_pos] = topic[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
+    WriteCmdIntoBuff(SMSUB, WRITE);
+    WriteStrIntoBuff(topic);
     ValueDelimiter();
+
     if (qos == QOS_0)
         message_buff[message_pointer_pos] = '0';
     else if (qos == QOS_1)
@@ -544,6 +356,7 @@ bool SubscribePacket(const char *topic, Qos_enum qos)
     else
         message_buff[message_pointer_pos] = '2';
     message_pointer_pos++;
+
     EndCMD();
     return SendCMD();
 }
@@ -564,54 +377,16 @@ bool EchoBackOff()
 // GPRS ----------------------------------------------------------------------------------
 bool PingIPV4(const char *ipaddress, const char *count, const char *size, const char *timeout)
 {
+    // AT+SNPING4=<URL>,<count>,<size>,<timeout>
     BeginCMD();
-
-    for (int i = 0; i < SIZE(SNPING4); i++)
-    {
-        message_buff[message_pointer_pos] = SNPING4[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
-
-    QuotationMarks();
-    for (int i = 0; i < strlen(ipaddress); i++)
-    {
-        message_buff[message_pointer_pos] = ipaddress[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteCmdIntoBuff(SNPING4, WRITE);
+    WriteStrIntoBuff(ipaddress);
     ValueDelimiter();
-
-    QuotationMarks();
-    for (int i = 0; i < strlen(count); i++)
-    {
-        message_buff[message_pointer_pos] = count[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteStrIntoBuff(count);
     ValueDelimiter();
-
-    QuotationMarks();
-    for (int i = 0; i < strlen(size); i++)
-    {
-        message_buff[message_pointer_pos] = size[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteStrIntoBuff(size);
     ValueDelimiter();
-
-    QuotationMarks();
-    for (int i = 0; i < strlen(timeout); i++)
-    {
-        message_buff[message_pointer_pos] = timeout[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteStrIntoBuff(timeout);
     EndCMD();
     return SendCMD();
 }
@@ -619,14 +394,7 @@ bool PingIPV4(const char *ipaddress, const char *count, const char *size, const 
 bool GPRSAttachment(bool active)
 {
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CGATT); i++)
-    {
-        message_buff[message_pointer_pos] = CGATT[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
+    WriteCmdIntoBuff(CGATT, WRITE);
 
     message_buff[message_pointer_pos] = active ? '1' : '0';
     message_pointer_pos++;
@@ -637,96 +405,44 @@ bool GPRSAttachment(bool active)
 
 bool PDPContext(const char cid, const char *pdp_type, const char *apn, const char *pdp_addr, D_comp_enum d_comp, H_comp_enum h_comp, bool ipv4_ctrl, bool emergency_flag)
 {
+    // AT+CGDCONT=<cid>[,<PDP_type>[,<APN>[,<PDP_addr>[,<d_comp>[,<h_comp>][,<ipv4_ctrl>[,<emergency_flag>]]]]]]
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CGDCONT); i++)
-    {
-        message_buff[message_pointer_pos] = CGDCONT[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
+    WriteCmdIntoBuff(CGDCONT, WRITE);
 
     message_buff[message_pointer_pos] = cid;
     message_pointer_pos++;
 
     ValueDelimiter();
-
-    QuotationMarks();
-    for (int i = 0; i < strlen(pdp_type); i++)
-    {
-        message_buff[message_pointer_pos] = pdp_type[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteStrIntoBuff(pdp_type);
     ValueDelimiter();
-    QuotationMarks();
-    for (int i = 0; i < strlen(apn); i++)
-    {
-        message_buff[message_pointer_pos] = apn[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteStrIntoBuff(apn);
     ValueDelimiter();
-    QuotationMarks();
-    for (int i = 0; i < strlen(pdp_addr); i++)
-    {
-        message_buff[message_pointer_pos] = pdp_addr[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteStrIntoBuff(pdp_addr);
     ValueDelimiter();
     EnumToCharWriteBuff((uint8_t)d_comp);
-
     ValueDelimiter();
     EnumToCharWriteBuff((uint8_t)h_comp);
-
     ValueDelimiter();
     EnumToCharWriteBuff((uint8_t)ipv4_ctrl);
-
     ValueDelimiter();
     EnumToCharWriteBuff((uint8_t)emergency_flag);
-
     EndCMD();
     return SendCMD();
 }
 
 bool PDPContext(const char cid, const char *pdp_type, const char *apn)
 {
+    // AT+CGDCONT=<cid>[,<PDP_type>[,<APN>[,<PDP_addr>[,<d_comp>[,<h_comp>][,<ipv4_ctrl>[,<emergency_flag>]]]]]]
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CGDCONT); i++)
-    {
-        message_buff[message_pointer_pos] = CGDCONT[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
+    WriteCmdIntoBuff(CGDCONT, WRITE);
 
     message_buff[message_pointer_pos] = cid;
     message_pointer_pos++;
 
     ValueDelimiter();
-
-    QuotationMarks();
-    for (int i = 0; i < strlen(pdp_type); i++)
-    {
-        message_buff[message_pointer_pos] = pdp_type[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteStrIntoBuff(pdp_type);
     ValueDelimiter();
-    QuotationMarks();
-    for (int i = 0; i < strlen(apn); i++)
-    {
-        message_buff[message_pointer_pos] = apn[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
+    WriteStrIntoBuff(apn);
     EndCMD();
     return SendCMD();
 }
@@ -734,15 +450,7 @@ bool PDPContext(const char cid, const char *pdp_type, const char *apn)
 bool GetPDPContext()
 {
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CGDCONT); i++)
-    {
-        message_buff[message_pointer_pos] = CGDCONT[i];
-        message_pointer_pos++;
-    }
-
-    ReadCMD();
-
+    WriteCmdIntoBuff(CGDCONT, READ);
     EndCMD();
     return SendCMD();
 }
@@ -752,13 +460,7 @@ bool GetPDPContext()
 bool GetGNSS()
 {
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CGNSINF); i++)
-    {
-        message_buff[message_pointer_pos] = CGNSINF[i];
-        message_pointer_pos++;
-    }
-
+    WriteCmdIntoBuff(CGNSINF, EXE);
     EndCMD();
     return SendCMD();
 }
@@ -766,14 +468,7 @@ bool GetGNSS()
 bool SetGNSSPowerMode(bool state)
 {
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CGNSPWR); i++)
-    {
-        message_buff[message_pointer_pos] = CGNSPWR[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
+    WriteCmdIntoBuff(CGNSPWR, WRITE);
 
     message_buff[message_pointer_pos] = state ? '1' : '0';
     message_pointer_pos++;
@@ -785,14 +480,7 @@ bool SetGNSSPowerMode(bool state)
 bool SetGNSSWorkMode(bool gps_mode, bool plo_mode, bool bd_mode, bool gal_mode, bool qzss_mode)
 {
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CGNSMOD); i++)
-    {
-        message_buff[message_pointer_pos] = CGNSMOD[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
+    WriteCmdIntoBuff(CGNSMOD, WRITE);
 
     message_buff[message_pointer_pos] = gps_mode ? '1' : '0';
     message_pointer_pos++;
@@ -820,6 +508,39 @@ bool SetGNSSWorkMode(bool gps_mode, bool plo_mode, bool bd_mode, bool gal_mode, 
     EndCMD();
     return SendCMD();
 }
+
+bool SetHighAccuracyGNSSMode(const char *minInterval, const char *minDistance)
+{
+    BeginCMD();
+    WriteCmdIntoBuff(SGNSCMD, WRITE);
+
+    message_buff[message_pointer_pos] = '2';
+    message_pointer_pos++;
+
+    ValueDelimiter();
+
+    for (int i = 0; i < strlen(minInterval); i++)
+    {
+        message_buff[message_pointer_pos] = minInterval[i];
+        message_pointer_pos++;
+    }
+
+    ValueDelimiter();
+
+    for (int i = 0; i < strlen(minDistance); i++)
+    {
+        message_buff[message_pointer_pos] = minDistance[i];
+        message_pointer_pos++;
+    }
+
+    ValueDelimiter();
+
+    message_buff[message_pointer_pos] = '3';
+    message_pointer_pos++;
+
+    EndCMD();
+    return SendCMD();
+}
 // ---------------------------------------------------------------------------------------
 
 // SIMCom --------------------------------------------------------------------------------
@@ -827,14 +548,7 @@ bool ShowNetworkSystemMode()
 {
     // AT+CNSMOD?
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CNSMOD); i++)
-    {
-        message_buff[message_pointer_pos] = CNSMOD[i];
-        message_pointer_pos++;
-    }
-    ReadCMD();
-
+    WriteCmdIntoBuff(CNSMOD, READ);
     EndCMD();
     return SendCMD();
 }
@@ -843,13 +557,7 @@ bool GetNetworkAPN()
 {
     // AT+CGNAPN
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CGNAPN); i++)
-    {
-        message_buff[message_pointer_pos] = CGNAPN[i];
-        message_pointer_pos++;
-    }
-
+    WriteCmdIntoBuff(CGNAPN, EXE);
     EndCMD();
     return SendCMD();
 }
@@ -858,14 +566,7 @@ bool GetEPSNetworkStatus()
 {
     // AT+CEREG?
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CEREG); i++)
-    {
-        message_buff[message_pointer_pos] = CEREG[i];
-        message_pointer_pos++;
-    }
-    ReadCMD();
-
+    WriteCmdIntoBuff(CEREG, READ);
     EndCMD();
     return SendCMD();
 }
@@ -874,13 +575,7 @@ bool SetEPSNetworkStatus(char n)
 {
     // AT+CEREG=<n>
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CEREG); i++)
-    {
-        message_buff[message_pointer_pos] = CEREG[i];
-        message_pointer_pos++;
-    }
-    WriteCMD();
+    WriteCmdIntoBuff(CEREG, WRITE);
 
     message_buff[message_pointer_pos] = n;
     message_pointer_pos++;
@@ -893,14 +588,7 @@ bool GetTCPUDPConnectionStatus()
 {
     // AT+CAOPEN?
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CAOPEN); i++)
-    {
-        message_buff[message_pointer_pos] = CAOPEN[i];
-        message_pointer_pos++;
-    }
-    ReadCMD();
-
+    WriteCmdIntoBuff(CAOPEN, READ);
     EndCMD();
     return SendCMD();
 }
@@ -909,14 +597,7 @@ bool CheckSIMCard()
 {
     // AT+CPIN?
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CPIN); i++)
-    {
-        message_buff[message_pointer_pos] = CPIN[i];
-        message_pointer_pos++;
-    }
-    ReadCMD();
-
+    WriteCmdIntoBuff(CPIN, READ);
     EndCMD();
     return SendCMD();
 }
@@ -925,12 +606,7 @@ bool CheckRF()
 {
     // AT+CSQ
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CSQ); i++)
-    {
-        message_buff[message_pointer_pos] = CSQ[i];
-        message_pointer_pos++;
-    }
+    WriteCmdIntoBuff(CSQ, EXE);
 
     EndCMD();
     if (SendCMD())
@@ -948,14 +624,7 @@ bool CheckPSService()
 {
     // AT+CGATT?
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CGATT); i++)
-    {
-        message_buff[message_pointer_pos] = CGATT[i];
-        message_pointer_pos++;
-    }
-    ReadCMD();
-
+    WriteCmdIntoBuff(CGATT, READ);
     EndCMD();
     return SendCMD();
 }
@@ -964,14 +633,7 @@ bool QueryNetworkInfo()
 {
     // AT+COPS?
     BeginCMD();
-
-    for (int i = 0; i < SIZE(COPS); i++)
-    {
-        message_buff[message_pointer_pos] = COPS[i];
-        message_pointer_pos++;
-    }
-    ReadCMD();
-
+    WriteCmdIntoBuff(COPS, READ);
     EndCMD();
     return SendCMD();
 }
@@ -980,31 +642,15 @@ bool PDPConfigure(int pdpidx, const char ip_type, const char *apn)
 {
     // AT+CNCFG=0,1,"ctnb"
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CNCFG); i++)
-    {
-        message_buff[message_pointer_pos] = CNCFG[i];
-        message_pointer_pos++;
-    }
-    WriteCMD();
-
+    WriteCmdIntoBuff(CNCFG, WRITE);
     AddPDPIndex(pdpidx);
-
     ValueDelimiter();
 
     message_buff[message_pointer_pos] = ip_type;
     message_pointer_pos++;
 
     ValueDelimiter();
-
-    QuotationMarks();
-    for (int i = 0; i < strlen(apn); i++)
-    {
-        message_buff[message_pointer_pos] = apn[i];
-        message_pointer_pos++;
-    }
-    QuotationMarks();
-
+    WriteStrIntoBuff(apn);
     EndCMD();
     return SendCMD();
 }
@@ -1013,12 +659,7 @@ bool PDPConfigureReadCMD()
 {
     // AT+CNCFG?
     BeginCMD();
-    for (int i = 0; i < SIZE(CNCFG); i++)
-    {
-        message_buff[message_pointer_pos] = CNCFG[i];
-        message_pointer_pos++;
-    }
-    ReadCMD();
+    WriteCmdIntoBuff(CNCFG, READ);
     EndCMD();
     return SendCMD();
 }
@@ -1027,14 +668,7 @@ bool BandTest()
 {
     // AT+CBANDCFG?
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CBANDCFG); i++)
-    {
-        message_buff[message_pointer_pos] = CBANDCFG[i];
-        message_pointer_pos++;
-    }
-    ReadCMD();
-
+    WriteCmdIntoBuff(CBANDCFG, READ);
     EndCMD();
     return SendCMD();
 }
@@ -1043,14 +677,7 @@ bool SetNetworkType(Network_select_enum mode)
 {
     // AT+CMNB=<mode>
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CMNB); i++)
-    {
-        message_buff[message_pointer_pos] = CMNB[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
+    WriteCmdIntoBuff(CMNB, READ);
 
     if (mode == CAT_M)
         message_buff[message_pointer_pos] = '1';
@@ -1063,21 +690,32 @@ bool SetNetworkType(Network_select_enum mode)
     EndCMD();
     return SendCMD();
 }
+
+bool GetBandScanConfig()
+{
+    // AT+CNBS?
+    BeginCMD();
+    WriteCmdIntoBuff(CNBS, READ);
+    EndCMD();
+    return SendCMD();
+}
+
+bool GetEngineeringModeInfo()
+{
+    // AT+CENG?
+    BeginCMD();
+    WriteCmdIntoBuff(CENG, READ);
+    EndCMD();
+    return SendCMD();
+}
 // ---------------------------------------------------------------------------------------
 
 // NTP App -------------------------------------------------------------------------------
 bool GetSynchronizeUTCTime()
 {
+    // AT+CNTP?
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CNTP); i++)
-    {
-        message_buff[message_pointer_pos] = CNTP[i];
-        message_pointer_pos++;
-    }
-
-    ReadCMD();
-
+    WriteCmdIntoBuff(CNTP, READ);
     EndCMD();
     return SendCMD();
 }
@@ -1088,14 +726,7 @@ bool APPNetworkActive(int pdpidx, Action_enum action)
 {
     // AT+CNACT=<pdpidx>,<action>
     BeginCMD();
-
-    for (int i = 0; i < SIZE(CNACT); i++)
-    {
-        message_buff[message_pointer_pos] = CNACT[i];
-        message_pointer_pos++;
-    }
-
-    WriteCMD();
+    WriteCmdIntoBuff(CNACT, WRITE);
     AddPDPIndex(pdpidx);
     ValueDelimiter();
 
@@ -1106,6 +737,7 @@ bool APPNetworkActive(int pdpidx, Action_enum action)
     else if (action == AUTO_ACTIVE)
         message_buff[message_pointer_pos] = '2';
     message_pointer_pos++;
+
     EndCMD();
     return SendCMD();
 }
@@ -1114,12 +746,7 @@ bool AppNetworkActiveReadCMD(int pdpidx)
 {
     // AT+CNACT?
     BeginCMD();
-    for (int i = 0; i < SIZE(CNACT); i++)
-    {
-        message_buff[message_pointer_pos] = CNACT[i];
-        message_pointer_pos++;
-    }
-    ReadCMD();
+    WriteCmdIntoBuff(CNACT, READ);
     EndCMD();
     if (SendCMD())
     {
@@ -1158,17 +785,14 @@ bool SetPhoneFunc(Cfun_enum fun)
 {
     // AT+CFUN=<fun>[,<rst>]
     BeginCMD();
-    for (int i = 0; i < SIZE(CFUN); i++)
-    {
-        message_buff[message_pointer_pos] = CFUN[i];
-        message_pointer_pos++;
-    }
-    WriteCMD();
+    WriteCmdIntoBuff(CFUN, WRITE);
+
     if (fun == MIN_FUNC)
         message_buff[message_pointer_pos] = '0';
     else if (fun == FULL_FUNC)
         message_buff[message_pointer_pos] = '1';
     message_pointer_pos++;
+
     EndCMD();
     if (SendCMD(15))
     {
@@ -1183,5 +807,30 @@ bool SetPhoneFunc(Cfun_enum fun)
         return true; // <-----------
     }
     return false;
+}
+// ---------------------------------------------------------------------------------------
+
+// AT cmd for LBS app --------------------------------------------------------------------
+bool GetGSMLocation(int type, const char cid)
+{
+    // AT+CLBS=<type>,<cid>,[[<longitude>,<latitude>],[<lon_type>]]
+    BeginCMD();
+    WriteCmdIntoBuff(CLBS, WRITE);
+
+    if (type == 1)
+        message_buff[message_pointer_pos] = '1';
+    else if (type == 4)
+        message_buff[message_pointer_pos] = '4';
+    else
+        return false;
+    message_pointer_pos++;
+
+    ValueDelimiter();
+
+    message_buff[message_pointer_pos] = cid;
+    message_pointer_pos++;
+
+    EndCMD();
+    return SendCMD();
 }
 // ---------------------------------------------------------------------------------------

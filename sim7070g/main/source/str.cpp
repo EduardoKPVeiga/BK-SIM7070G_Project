@@ -1,4 +1,4 @@
-#include "str.h"
+#include "../include/str.h"
 
 bool StrCompare(char *str1, char *str2, int size_str1, int size_str2)
 {

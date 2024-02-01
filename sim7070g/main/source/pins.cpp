@@ -1,4 +1,4 @@
-#include "pins.h"
+#include "../include/pins.h"
 
 void PinsSetup()
 {

@@ -1,5 +1,5 @@
-#include "uart_sim7070g.h"
-#include "sim7070g_commands.h"
+#include "../include/uart_sim7070g.h"
+#include "../include/sim7070g_commands.h"
 
 const uart_port_t uart_sim7070g = UART_NUM_2;
 char msg_received[MSG_RECEIVED_BUFF_SIZE] = {0};

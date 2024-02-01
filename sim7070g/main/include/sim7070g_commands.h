@@ -14,8 +14,6 @@
 #define RESP_DELIMITER "<CR><LF>"
 #define CMD_DELIMITER ";"
 #define VALUE_DELIMITER ","
-#define OPEN_BRACKET "["
-#define CLOSE_BRACKET "]"
 #define TEST_CMD "=?"
 #define READ_CMD "?"
 #define WRITE_CMD "="
@@ -41,8 +39,9 @@
 #define CGNSINF "+CGNSINF" // GNSS navigation information parsed from NMEA sentences
 #define CGNSPWR "+CGNSPWR" // GNSS power control
 #define CGNSMOD "+CGNSMOD" // GNSS work mode set
+#define SGNSCMD "+SGNSCMD" // GNSS command
 
-// IP Application
+// SIM cmds
 #define CNSMOD "+CNSMOD"     // Network system mode
 #define CGNAPN "+CGNAPN"     // Network APN
 #define CEREG "+CEREG"       // EPS network registration status
@@ -54,11 +53,21 @@
 #define CNCFG "+CNCFG"       // PDP configure
 #define CBANDCFG "+CBANDCFG" // Test if the band is properly set
 #define CFUN "+CFUN"         // Set Phone Functionality
+#define CNBS "+CNBS"         // Band scan optimization
+#define CENG "+CENG"         // Engineering mode
+
+// SMS
+#define CMGF "+CMGF" // Select SMS message format
+#define CMGD "+CMGD" // Delete SMS message
+#define CMGS "+CMGS" // Send SMS message
+#define CMGW "+CMGW" // Write SMS message to memory
+#define CMSS "+CMSS" // Send SMS message from storage
 
 #define CNTP "+CNTP" // UTC time
 
 #define CNACT "+CNACT" // APP network active
 #define CMNB "+CMNB"   // Preferred selection between CAT-M and NB-IoT
+#define CLBS "+CLBS"   // Base station location
 
 #define CLIENTID "CLIENTID"
 #define URL "URL"
@@ -77,6 +86,14 @@
 #define RESP_OK "OK"
 #define RESP_ERROR "ERROR"
 #define RESP_DEACTIVE "DEACTIVE"
+
+enum CMD_action_enum
+{
+    WRITE = 0,
+    READ = 1,
+    TEST = 2,
+    EXE = 3
+};
 
 enum PDP_type_enum
 {
@@ -179,20 +196,6 @@ void ReadCMD();
 void TestCMD();
 
 /**
- * Put the character '[' in the message
- * @author Eduardo Veiga
- * @return void
- */
-void OpenBracket();
-
-/**
- * Put the character ']' in the message
- * @author Eduardo Veiga
- * @return void
- */
-void CloseBracket();
-
-/**
  * Write enum as a char
  * @author Eduardo Veiga
  * @param value : uint8_t
@@ -208,6 +211,23 @@ void EnumToCharWriteBuff(uint8_t value);
  */
 void AddPDPIndex(int pdpidx);
 
+/**
+ * Add a char array in the message buffer
+ * @author Eduardo Veiga
+ * @param str : const char*
+ * @return void
+ */
+void WriteStrIntoBuff(const char *str);
+
+/**
+ * Add a char array in the message buffer
+ * @author Eduardo Veiga
+ * @param cmd : const char*
+ * @param action : CMD_action_enum
+ * @return void
+ */
+void WriteCmdIntoBuff(const char *cmd, CMD_action_enum action);
+
 /*
  * Connect to MQTT broker
  * @author Eduardo Veiga
@@ -216,11 +236,11 @@ void AddPDPIndex(int pdpidx);
 bool MQTTConnect();
 
 /*
- * Connect to MQTT broker
+ * Disconnect to MQTT broker
  * @author Eduardo Veiga
- * @return null
+ * @return true if successful, false otherwise
  */
-void MQTTDisconnect();
+bool MQTTDisconnect();
 
 /*
  * Subscribe to MQTT broker topic
@@ -377,6 +397,15 @@ bool SetGNSSPowerMode(bool state);
 bool SetGNSSWorkMode(bool gps_mode, bool plo_mode, bool bd_mode, bool gal_mode, bool qzss_mode);
 
 /**
+ * Set high accuracy GNSS mode
+ * @author Eduardo Veiga
+ * @param minInterval : const char* (default: 1000)
+ * @param minDistance : const char*
+ * @return true if successful, false otherwise
+ */
+bool SetHighAccuracyGNSSMode(const char *minInterval = "1000", const char *minDistance = "0");
+
+/**
  * Show network system mode
  * @author Eduardo Veiga
  * @return true if successful, false otherwise
@@ -473,6 +502,20 @@ bool BandTest();
 bool SetNetworkType(Network_select_enum mode);
 
 /**
+ * Reads band scan configuration
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetBandScanConfig();
+
+/**
+ * Reads engineering mode information
+ * @author Eduardo veiga
+ * @return true if successful, false otherwise
+ */
+bool GetEngineeringModeInfo();
+
+/**
  * Send packet through MQTT
  * @author Eduardo Veiga
  * @param topic : const char*
@@ -490,13 +533,6 @@ bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain
  * @return true if successful, false otherwise
  */
 bool TestSendPacket();
-
-/**
- * Indication of MQTT receive subscribe data
- * @author Eduardo Veiga
- * @return true if successful, false otherwise
- */
-bool MQTTReceiveSubscribeData();
 
 /**
  * Subscribe to a MQTT topic
@@ -537,4 +573,13 @@ bool APPNetworkActive(int pdpidx, Action_enum action);
  * @return true if successful, false otherwise
  */
 bool SetPhoneFunc(Cfun_enum fun);
+
+/**
+ * Get coordinates from Base Station Location
+ * @author Eduardo Veiga
+ * @param type : int
+ * @param cid : const char
+ * @return true if successful, false otherwise
+ */
+bool GetGSMLocation(int type, const char cid);
 #endif
