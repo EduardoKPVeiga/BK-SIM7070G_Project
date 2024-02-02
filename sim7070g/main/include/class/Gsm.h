@@ -38,6 +38,11 @@ public:
     bool mqtt_publish(unsigned char *msg, size_t msg_length, int slot);
 
     bool GetLocation();
+    double GetLatitude();
+    double GetLongitude();
+    double GetAltitude();
+    int GetSatellitesInView();
+    void PrintCoord();
 };
 
 #endif

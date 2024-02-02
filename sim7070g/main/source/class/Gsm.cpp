@@ -394,3 +394,79 @@ bool Gsm::GetLocation()
 {
     return GetGNSS();
 }
+
+double Gsm::GetLatitude()
+{
+    int cont_comma = 0;
+    char latitude[11] = {'\0'};
+    for (int i = begin_msg_received + SIZE(CGNSINF) + 2, j = 0; i < end_msg_received; i++)
+    {
+        if (msg_received[i] == ',')
+            cont_comma++;
+        if (cont_comma == 3 && msg_received[i] != ',')
+        {
+            latitude[j] = msg_received[i];
+            j++;
+        }
+    }
+    return atof(latitude);
+}
+
+double Gsm::GetLongitude()
+{
+    int cont_comma = 0;
+    char longitude[12] = {'\0'};
+    for (int i = begin_msg_received + SIZE(CGNSINF) + 2, j = 0; i < end_msg_received; i++)
+    {
+        if (msg_received[i] == ',')
+            cont_comma++;
+        if (cont_comma == 4 && msg_received[i] != ',')
+        {
+            longitude[j] = msg_received[i];
+            j++;
+        }
+    }
+    return atof(longitude);
+}
+
+double Gsm::GetAltitude()
+{
+    int cont_comma = 0;
+    char altitude[9] = {'\0'};
+    for (int i = begin_msg_received + SIZE(CGNSINF) + 2, j = 0; i < end_msg_received; i++)
+    {
+        if (msg_received[i] == ',')
+            cont_comma++;
+        if (cont_comma == 5 && msg_received[i] != ',')
+        {
+            altitude[j] = msg_received[i];
+            j++;
+        }
+    }
+    return atof(altitude);
+}
+
+int Gsm::GetSatellitesInView()
+{
+    int cont_comma = 0;
+    char satellites[3] = {'\0'};
+    for (int i = begin_msg_received + SIZE(CGNSINF) + 2, j = 0; i < end_msg_received; i++)
+    {
+        if (msg_received[i] == ',')
+            cont_comma++;
+        if (cont_comma == 14 && msg_received[i] != ',')
+        {
+            satellites[j] = msg_received[i];
+            j++;
+        }
+    }
+    return atof(satellites);
+}
+
+void Gsm::PrintCoord()
+{
+    ESP_LOGI(TAG, "Latitude:\t%f", GetLatitude());
+    ESP_LOGI(TAG, "Longitude:\t%f", GetLongitude());
+    ESP_LOGI(TAG, "Altitude:\t%f", GetAltitude());
+    ESP_LOGI(TAG, "Satellites:\t%d", GetSatellitesInView());
+}
