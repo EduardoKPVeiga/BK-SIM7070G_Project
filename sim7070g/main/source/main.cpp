@@ -16,10 +16,16 @@ extern "C"
 
         while (1)
         {
-            ESP_LOGI(TAG, "Sending MQTT msg command...");
+            ESP_LOGI(TAG, "writing MQTT msg command...");
             // gsm->mqtt_publish("Sim7070g", (unsigned char *)"Hello", (size_t)5);
             gsm->mqtt_publish(msg, (size_t)strlen((const char *)msg), 0);
             vTaskDelay(DELAY_ERROR_MSG);
+            // ESP_LOGI(TAG, "writing get GSM location...");
+            // if (gsm->GetLocation())
+            //     PrintCoord();
+            // else
+            //     ESP_LOGE(TAG, "failed.");
+            // vTaskDelay(DELAY_ERROR_MSG);
         }
     }
 }

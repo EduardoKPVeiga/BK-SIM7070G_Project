@@ -36,6 +36,8 @@ public:
 
     bool mqtt_publish(char *topic, unsigned char *msg, size_t msg_length);
     bool mqtt_publish(unsigned char *msg, size_t msg_length, int slot);
+
+    bool GetLocation();
 };
 
 #endif

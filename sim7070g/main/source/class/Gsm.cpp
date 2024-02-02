@@ -376,7 +376,7 @@ bool Gsm::mqtt_publish(char *topic, unsigned char *msg, size_t msg_length)
         length += (char)(digit + '0');
         size = (uint16_t)(size / 10);
     }
-    return SendPacket(topic, length.c_str(), qos_level, retain, (const char *)msg);
+    return SendPacket(topic, strrev((char *)length.c_str()), qos_level, retain, (const char *)msg);
 }
 
 bool Gsm::mqtt_publish(unsigned char *msg, size_t msg_length, int slot)
@@ -387,5 +387,10 @@ bool Gsm::mqtt_publish(unsigned char *msg, size_t msg_length, int slot)
         topic[i] = serial_num[i];
     }
     topic[8] = '0' + slot;
-    return mqtt_publish(topic, msg, msg_length);
+    return this->mqtt_publish(topic, msg, msg_length);
+}
+
+bool Gsm::GetLocation()
+{
+    return GetGNSS();
 }
