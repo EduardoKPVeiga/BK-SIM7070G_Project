@@ -10,39 +10,4 @@
 #include "uart_sim7070g.h"
 #include <stdlib.h>
 
-/**
- * Extract the latitude from message received
- * @author Eduardo Veiga
- * @return double
- */
-double GetLatitude();
-
-/**
- * Extract the longitude from message received
- * @author Eduardo Veiga
- * @return double
- */
-double GetLongitude();
-
-/**
- * Extract the altitude from message received
- * @author Eduardo Veiga
- * @return double
- */
-double GetAltitude();
-
-/**
- * Extract the numbers of satellites available from message received
- * @author Eduardo Veiga
- * @return int
- */
-int GetSatellitesInView();
-
-/**
- * ESP_LOGI the coordinate information
- * @author Eduardo Veiga
- * @return void
- */
-void PrintCoord();
-
 #endif
