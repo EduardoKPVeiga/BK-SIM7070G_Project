@@ -3,6 +3,8 @@
 extern char message_buff[MESSAGE_BUFF_MAX_SIZE];
 extern uint16_t message_pointer_pos;
 
+static const char *TAG = "CMD";
+
 // =======================================================================================
 
 void BeginCMD()
@@ -128,6 +130,15 @@ bool MQTTDisconnect()
     // AT+SMDISC
     BeginCMD();
     WriteCmdIntoBuff(SMDISC, EXE);
+    EndCMD();
+    return SendCMD();
+}
+
+bool MQTTStatus()
+{
+    // AT+SMSTATE?
+    BeginCMD();
+    WriteCmdIntoBuff(SMSTATE, READ);
     EndCMD();
     return SendCMD();
 }
@@ -282,6 +293,9 @@ bool SetQOS(Qos_enum level)
 bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain, const char *msg)
 {
     // AT+SMPUB=<topic>,<content length>,<qos>,<retain><CR>message is enteredQuit edit mode if message length equals to <content length>
+    // MQTTConnect();
+    // vTaskDelay(10 / portTICK_PERIOD_MS);
+
     BeginCMD();
     WriteCmdIntoBuff(SMPUB, WRITE);
     WriteStrIntoBuff(topic);
@@ -310,24 +324,28 @@ bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain
 
     EndCMD();
 
-    int cont = 0;
-    ESP_LOGI("CMD", "writing send packet command...");
-    while (!SendCMD() && cont < 5)
+    ESP_LOGI(TAG, "writing send packet command...");
+    if (SendCMD())
     {
-        ESP_LOGI("CMD", "writing send packet command...");
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-    ESP_LOGI("CMD", "send packet command.");
-    if (StrContainsSubstr(&(msg_received[begin_msg_received]), ">", msg_received_size, 1))
-    {
-        message_pointer_pos = 0;
-        for (int i = 0; i < strlen(msg); i++)
+        int cont = 0;
+        while (!mqtt_publish_flag)
         {
-            message_buff[message_pointer_pos] = msg[i];
-            message_pointer_pos++;
+            if (cont == 10)
+                return false;
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            cont++;
         }
-
-        return SendCMD();
+        if (mqtt_publish_flag)
+        {
+            message_pointer_pos = 0;
+            for (int i = 0; i < strlen(msg); i++)
+            {
+                message_buff[message_pointer_pos] = msg[i];
+                message_pointer_pos++;
+            }
+            mqtt_publish_flag = false;
+            return SendCMD();
+        }
     }
     return false;
 }
@@ -613,7 +631,7 @@ bool CheckRF()
     {
         if (StrContainsSubstr(msg_received, "99", MSG_RECEIVED_BUFF_SIZE, strlen("99")))
         {
-            ESP_LOGE("CMD", "<rssi> or <ber> parameters not knowm or not detectable.");
+            ESP_LOGE(TAG, "<rssi> or <ber> parameters not knowm or not detectable.");
         }
         return true;
     }
@@ -800,7 +818,7 @@ bool SetPhoneFunc(Cfun_enum fun)
         {
             // if (StrContainsSubstr(msg_received, "NOT", MSG_RECEIVED_BUFF_SIZE, strlen("NOT")))
             // {
-            //     ESP_LOGW("CMD", );
+            //     ESP_LOGW(TAG, );
             // }
             return true;
         }

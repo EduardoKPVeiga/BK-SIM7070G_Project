@@ -8,6 +8,7 @@ uint16_t msg_received_size = 0;
 uint16_t begin_msg_received = 0;
 uint16_t end_msg_received = 0;
 bool received = false;
+bool mqtt_publish_flag = false;
 
 static const char *TAG = "Uart";
 
@@ -86,11 +87,8 @@ bool SendCMD(int max_resp_time)
     char msg_received_LOG[MSG_RECEIVED_BUFF_SIZE] = {0};
     for (int i = 0; i < attempts; i++)
     {
-        if (received)
+        if (received || mqtt_publish_flag)
         {
-            //     ESP_LOGW(TAG, "begin_msg_received:\t%d", begin_msg_received);
-            //     ESP_LOGW(TAG, "end_msg_received:\t%d", end_msg_received);
-            // ESP_LOGW(TAG, "msg_received_size:\t%d", msg_received_size);
             for (int j = begin_msg_received, k = 0; j < end_msg_received; j++, k++)
             {
                 if (msg_received[j] == '\0')
@@ -171,7 +169,7 @@ void uart2_task(void *pvParameters)
                 if (StrContainsSubstr(&(msg_received[begin_msg_received]), SMSUB, msg_received_size, SIZE(SMSUB)))
                 {
                     Clean_subscribe_data();
-                    for (int j = begin_msg_received, k = 0; j < end_msg_received; j++, k++)
+                    for (int j = begin_msg_received, k = 0; j < 4; j++, k++)
                     {
                         if (msg_received[j] == '\0')
                             subscribe_data[k] = '/';
@@ -180,21 +178,26 @@ void uart2_task(void *pvParameters)
                     }
                     ESP_LOGI(TAG, "%s", subscribe_data);
                 }
-                if (StrContainsSubstr(&(msg_received[begin_msg_received]), ">", msg_received_size, 1))
-                    break;
-                if (!StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_OK, msg_received_size, SIZE(RESP_OK)) && !StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)))
+                if (!StrContainsChar(&(msg_received[begin_msg_received]), '>', msg_received_size))
                 {
-                    big_receive = true;
-                    received = false;
+                    if (!StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_OK, msg_received_size, SIZE(RESP_OK)) && !StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)))
+                    {
+                        big_receive = true;
+                        received = false;
+                    }
+                    else
+                    {
+                        if (big_receive)
+                        {
+                            begin_msg_received = old_begin;
+                            msg_received_size = end_msg_received - begin_msg_received;
+                            big_receive = false;
+                        }
+                    }
                 }
                 else
                 {
-                    if (big_receive)
-                    {
-                        begin_msg_received = old_begin;
-                        msg_received_size = end_msg_received - begin_msg_received;
-                        big_receive = false;
-                    }
+                    mqtt_publish_flag = true;
                 }
                 break;
 

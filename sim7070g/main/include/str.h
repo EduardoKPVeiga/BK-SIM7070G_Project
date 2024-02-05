@@ -15,6 +15,8 @@ bool ValidCharArray(char *char_array, int length);
 
 bool StrContainsSubstr(char *str, char *sub_str, int size_str, int size_sub_str);
 
+bool StrContainsChar(char *str, char a, int size_str);
+
 char *strrev(char *str);
 
 #endif

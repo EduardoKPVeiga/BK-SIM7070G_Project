@@ -12,32 +12,61 @@
 #include "esp_log.h"
 
 #define DELAY_ERROR_MSG 1000 / portTICK_PERIOD_MS
+#define ERROR_FLAG_MAX 6
 
 using namespace std;
+
+enum MQTT_status_enum
+{
+    OFF = 0,
+    ON = 1,
+    ERROR = 2
+};
 
 class Gsm : public Interface
 {
 private:
     char serial_num[8] = {0};
 
-    void Initialize();
+    // Flags
+    bool gsm_error;
+    bool mqtt_error;
+    bool gps_error;
+
+    void Initialize(bool flag);
 
     void PDNAutoActivation();
-    void PDNManualActivation();
+    bool PDNManualActivation();
 
-    void MQTTInit();
-    void GNSSInit();
+    bool MQTTInit();
+    bool GNSSInit();
     void GPRSInit();
 
+    bool ErrorFlagCount(bool *flag, uint8_t *count);
+    void ErrorFlagReset(bool *flag, uint8_t *count);
+
 public:
+    uint64_t connect_time;
+
     Gsm();
+    Gsm(bool flag);
     Gsm(char sn[8]);
+    Gsm(char sn[8], bool flag);
     ~Gsm();
+
+    char *GetSerialNumber();
+    void SetSerialNumber(const char sn[8]);
+
+    bool GetGsmErrorFlag() { return this->gsm_error; }
+    bool GetMqttErrorFlag() { return this->mqtt_error; }
+    bool GetGpsErrorFlag() { return this->gps_error; }
 
     bool mqtt_publish(char *topic, unsigned char *msg, size_t msg_length);
     bool mqtt_publish(unsigned char *msg, size_t msg_length, int slot);
-
     bool GetLocation();
+
+    MQTT_status_enum get_mqtt_status();
+
     double GetLatitude();
     double GetLongitude();
     double GetAltitude();

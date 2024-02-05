@@ -29,6 +29,7 @@
 #define SMUNSUB "+SMUNSUB" // Unsubscribe Packet
 #define SMDISC "+SMDISC"   // Disconnection MQTT
 #define SMPUB "+SMPUB"     // Send packet
+#define SMSTATE "+SMSTATE" // MQTT connection status
 
 // GPRS
 #define SNPING4 "+SNPING4" // Ping IPV4
@@ -86,6 +87,8 @@
 #define RESP_OK "OK"
 #define RESP_ERROR "ERROR"
 #define RESP_DEACTIVE "DEACTIVE"
+
+#define MQTT_PUB_TIMER 15000 // ms
 
 enum CMD_action_enum
 {
@@ -241,6 +244,13 @@ bool MQTTConnect();
  * @return true if successful, false otherwise
  */
 bool MQTTDisconnect();
+
+/**
+ * Inquire MQTT connection status
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool MQTTStatus();
 
 /*
  * Subscribe to MQTT broker topic

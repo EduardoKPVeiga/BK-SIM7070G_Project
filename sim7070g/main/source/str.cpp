@@ -53,6 +53,8 @@ bool ValidCharArray(char *char_array, int length)
 
 bool StrContainsSubstr(char *str, char *sub_str, int size_str, int size_sub_str)
 {
+    if (size_sub_str > size_str)
+        return 0;
     int i = 0, j = 0;
     for (; i < size_str; i++)
     {
@@ -68,6 +70,16 @@ bool StrContainsSubstr(char *str, char *sub_str, int size_str, int size_sub_str)
         }
     }
     return 0;
+}
+
+bool StrContainsChar(char *str, char a, int size_str)
+{
+    for (int i = 0; i < size_str; i++)
+    {
+        if (str[i] == a)
+            return true;
+    }
+    return false;
 }
 
 char *strrev(char *str)

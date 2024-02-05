@@ -4,7 +4,7 @@ static const char *TAG = "GSM";
 
 uint8_t cmd_failed_counter = 0;
 
-int pdp = 0;
+const int pdp = 0;
 const char ip_type = '1'; // Internet Protocol Version 4
 
 // MQTT parameters
@@ -31,9 +31,17 @@ const bool bd_mode = false;
 const bool gal_mode = true;
 const bool qzss_mode = false;
 
-Gsm::Gsm()
+Gsm::Gsm() { Initialize(false); }
+
+Gsm::Gsm(bool flag) { Initialize(flag); }
+
+Gsm::Gsm(char sn[8], bool flag)
 {
-    Initialize();
+    for (int i = 0; i < 8; i++)
+    {
+        serial_num[i] = sn[i];
+    }
+    Initialize(flag);
 }
 
 Gsm::Gsm(char sn[8])
@@ -42,32 +50,62 @@ Gsm::Gsm(char sn[8])
     {
         serial_num[i] = sn[i];
     }
-    Initialize();
+    Initialize(false);
 }
 
-Gsm::~Gsm() {}
+Gsm::~Gsm() { PWRKEYToGnd(); }
 
-void Gsm::Initialize()
+char *Gsm::GetSerialNumber() { return serial_num; }
+
+void Gsm::SetSerialNumber(const char sn[8])
 {
-    PinsSetup();
-    ESP_LOGI(TAG, "Pins Setup.");
+    for (int i = 0; i < 8; i++)
+        serial_num[i] = sn[i];
+}
 
-    uart2_task_init();
+void Gsm::Initialize(bool flag)
+{
+    if (!flag)
+    {
+        PinsSetup();
+        ESP_LOGI(TAG, "Pins Setup.");
+
+        uart2_task_init();
+    }
 
     PWRKEYPulse();
-    ESP_LOGI(TAG, "SIM7070G Init.");
+    ESP_LOGI(TAG, "\n\nSIM7070G Init.");
 
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+
+    uint8_t count = 0;
     while (!EchoBackOff())
     {
         ESP_LOGI(TAG, "Sending echo command...");
+        if (count == ERROR_FLAG_MAX)
+        {
+            this->gsm_error = true;
+            this->mqtt_error = true;
+            this->gps_error = true;
+            ESP_LOGE(TAG, "\n\nEcho cmd error!");
+            return;
+        }
+        count++;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Echo mode disabled.\n");
 
+    this->gsm_error = false;
+    this->mqtt_error = false;
+    this->gps_error = false;
+
     // PDNAutoActivation();
-    PDNManualActivation();
-    MQTTInit();
-    GNSSInit();
+    if (!PDNManualActivation())
+        return;
+    if (!MQTTInit())
+        return;
+    if (!GNSSInit())
+        return;
     // GPRSInit();
 }
 
@@ -153,175 +191,247 @@ void Gsm::PDNAutoActivation()
     ESP_LOGI(TAG, "APP network actived.\n");
 }
 
-void Gsm::PDNManualActivation()
+bool Gsm::PDNManualActivation()
 {
+    uint8_t error_cont = 0;
+
     // Disable RF
     ESP_LOGI(TAG, "writing set phone functionality command...");
     while (!SetPhoneFunc(MIN_FUNC))
     {
         ESP_LOGI(TAG, "writing set phone functionality command...");
+        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Set phone.\n");
+    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
 
     // Set the APN manually. Some operators needtoset APN first when registering the network.
     ESP_LOGI(TAG, "writing set PDP context command...");
     while (!PDPContext(cid, pdp_type, apn_vivo))
     {
         ESP_LOGI(TAG, "writing set PDP context command...");
+        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Set PDP context.\n");
+    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
 
     // Enable RF
     ESP_LOGI(TAG, "writing set phone functionality command...");
     while (!SetPhoneFunc(FULL_FUNC))
     {
         ESP_LOGI(TAG, "writing set phone functionality command...");
+        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Set phone.\n");
+    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
 
     // Check PS service. 1 indicates PS has attached.
     ESP_LOGI(TAG, "writing check PS service command...");
     while (!CheckPSService())
     {
         ESP_LOGI(TAG, "Sending check PS service command...");
+        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
+    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
 
     // Query the APN delivered by the network after theCAT-M or NB-IOT network is successfullyregistered
     ESP_LOGI(TAG, "writing get nertwork APN command...");
     while (!GetNetworkAPN())
     {
         ESP_LOGI(TAG, "Sending get nertwork APN command...");
+        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
+    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
 
     // Before activation please use AT+CNCFGtoset APN\user name\password if needed.
     ESP_LOGI(TAG, "writing PDP configure command...");
     while (!PDPConfigure(pdp, ip_type, apn_vivo))
     {
         ESP_LOGI(TAG, "writing PDP configure command...");
+        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     PDPConfigureReadCMD();
     ESP_LOGI(TAG, "PDP configured.\n");
+    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
 
     ESP_LOGI(TAG, "writing get band scan configuration command...");
     while (!GetBandScanConfig())
     {
         ESP_LOGI(TAG, "writing get band scan configuration command...");
+        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
+    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
 
     ESP_LOGI(TAG, "writing get engineering mode information command...");
     while (!GetEngineeringModeInfo())
     {
         ESP_LOGI(TAG, "writing get engineering mode information command...");
+        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
+    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
 
     // Activate network, Activate 0th PDP.
     ESP_LOGI(TAG, "writing APP network active command...");
     while (!APPNetworkActive(pdp, ACTIVED))
     {
         ESP_LOGI(TAG, "writing APP network active command...");
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
+            return false;
+        vTaskDelay(2 * DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "APP network actived.\n");
+    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
+    vTaskDelay(2 * DELAY_ERROR_MSG);
 
     ESP_LOGI(TAG, "writing APP network active read command...");
     while (!AppNetworkActiveReadCMD(pdp))
     {
         ESP_LOGI(TAG, "writing app network active command...");
         APPNetworkActive(pdp, ACTIVED);
-        vTaskDelay(DELAY_ERROR_MSG);
+        vTaskDelay(2 * DELAY_ERROR_MSG);
         ESP_LOGI(TAG, "writing app network active read command...");
+        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
+            return false;
     }
+    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
+    return true;
 }
 
-void Gsm::MQTTInit()
+bool Gsm::MQTTInit()
 {
+    uint8_t error_cont = 0;
+
     while (!SetClientID(client_id))
     {
         ESP_LOGI(TAG, "Sending client ID...");
+        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Set client ID.\n");
+    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
     while (!SetBrokerURL(broker_url, broker_port))
     {
         ESP_LOGI(TAG, "Sending broker URL...");
+        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Set broker URL.\n");
+    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
     while (!MQTTSubscribeTopic(mqtt_topic))
     {
         ESP_LOGI(TAG, "Subscrinbing MQTT topic...");
+        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Topic subscribe.\n");
+    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
     while (!SetAsyncmode(async_mode))
     {
         ESP_LOGI(TAG, "Sending set asyncmode command...");
+        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Asyncmode set.\n");
+    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
     while (!SetSubhex(sub_hex))
     {
         ESP_LOGI(TAG, "Sending set data type...");
+        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Data type set.\n");
+    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
     while (!SetMessageDetails(details))
     {
         ESP_LOGI(TAG, "Sending message details command...");
+        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Message details set.\n");
+    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
     while (!SetQOS(qos_level))
     {
         ESP_LOGI(TAG, "Sending set QOS command");
+        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "QOS set level.\n");
+    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
     while (!TestCMDMQTTParameters())
     {
+        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
+    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
     while (!MQTTConnect())
     {
         ESP_LOGI(TAG, "Connecting to broker...");
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
+            return false;
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
+    connect_time = esp_timer_get_time();
     ESP_LOGI(TAG, "Connected to broker.\n");
+    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
+    return true;
 }
 
-void Gsm::GNSSInit()
+bool Gsm::GNSSInit()
 {
+    uint8_t error_cont = 0;
     ESP_LOGI(TAG, "writing set GNSS power mode command...");
     while (!SetGNSSPowerMode(true))
     {
         ESP_LOGI(TAG, "writing set GNSS power mode command...");
+        if (this->ErrorFlagCount(&(this->gps_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Power mode set.");
+    this->ErrorFlagReset(&(this->gps_error), &error_cont);
 
     ESP_LOGI(TAG, "writing set GNSS work mode command...");
     while (!SetGNSSWorkMode(gps_mode, plo_mode, bd_mode, gal_mode, qzss_mode))
     {
         ESP_LOGI(TAG, "writing set GNSS work mode command...");
+        if (this->ErrorFlagCount(&(this->gps_error), &error_cont))
+            return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "Work mode set.");
+    this->ErrorFlagReset(&(this->gps_error), &error_cont);
 
     // ESP_LOGI(TAG, "writing set high accuracy mode command...");
     // while (!SetHighAccuracyGNSSMode())
@@ -330,6 +440,7 @@ void Gsm::GNSSInit()
     //     vTaskDelay(DELAY_ERROR_MSG);
     // }
     // ESP_LOGI(TAG, "High accuracy mode set.");
+    return true;
 }
 
 void Gsm::GPRSInit()
@@ -365,8 +476,38 @@ void Gsm::GPRSInit()
     }
 }
 
+bool Gsm::ErrorFlagCount(bool *flag, uint8_t *count)
+{
+    if (*count == ERROR_FLAG_MAX)
+    {
+        *flag = true;
+        return true;
+    }
+    (*count)++;
+    return false;
+}
+
+void Gsm::ErrorFlagReset(bool *flag, uint8_t *count)
+{
+    *flag = false;
+    *count = 0;
+}
+
 bool Gsm::mqtt_publish(char *topic, unsigned char *msg, size_t msg_length)
 {
+    MQTT_status_enum status = this->get_mqtt_status();
+    if (status == OFF)
+    {
+        ESP_LOGW(TAG, "Disconnected, trying to connect to the MQTT broker.");
+        while (!MQTTConnect())
+        {
+            ESP_LOGW(TAG, "Connecting...");
+            vTaskDelay(DELAY_ERROR_MSG);
+        }
+        ESP_LOGI(TAG, "Connected to the broker.");
+    }
+    else if (status == ERROR)
+        return false;
     uint16_t size = (uint16_t)msg_length;
     uint8_t digit = 0;
     string length = "";
@@ -393,6 +534,26 @@ bool Gsm::mqtt_publish(unsigned char *msg, size_t msg_length, int slot)
 bool Gsm::GetLocation()
 {
     return GetGNSS();
+}
+
+MQTT_status_enum Gsm::get_mqtt_status()
+{
+    MQTTStatus();
+    int index = begin_msg_received + SIZE(SMSTATE) + 4;
+    if (StrContainsSubstr(&(msg_received[begin_msg_received]), SMSTATE, msg_received_size, SIZE(SMSTATE)))
+    {
+        if (index < MSG_RECEIVED_BUFF_SIZE)
+        {
+            ESP_LOGW(TAG, "msg_received[index]: %c", msg_received[index]);
+            if (msg_received[index] == '0')
+                return OFF;
+            if (msg_received[index] == '1')
+                return ON;
+            if (msg_received[index] == '2')
+                return ON;
+        }
+    }
+    return ERROR;
 }
 
 double Gsm::GetLatitude()
