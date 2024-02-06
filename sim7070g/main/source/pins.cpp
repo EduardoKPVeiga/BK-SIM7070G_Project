@@ -20,5 +20,5 @@ void PWRKEYToGnd()
     gpio_set_level(PWRKEY, 0);
     vTaskDelay(PWRKEY_T_OFF);
     gpio_set_level(PWRKEY, 1);
-    vTaskDelay(PWRKEY_T_OFF_VDD);
+    vTaskDelay(4 * PWRKEY_T_OFF_VDD);
 }

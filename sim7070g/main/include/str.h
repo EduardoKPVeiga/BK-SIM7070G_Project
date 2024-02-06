@@ -2,6 +2,11 @@
 #define STR_H_
 
 #include "string.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <string>
+
+using namespace std;
 
 #define SIZE(x) ((sizeof(x)) - 1)
 
@@ -13,10 +18,12 @@ void StrConcatenate(char *str1, char *str2, char *str_result, int size_str1, int
 
 bool ValidCharArray(char *char_array, int length);
 
-bool StrContainsSubstr(char *str, char *sub_str, int size_str, int size_sub_str);
+int StrContainsSubstr(char *str, char *sub_str, int size_str, int size_sub_str);
 
 bool StrContainsChar(char *str, char a, int size_str);
 
 char *strrev(char *str);
+
+char *DecimalToCharArray(uint16_t decimal);
 
 #endif

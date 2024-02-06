@@ -5,6 +5,8 @@ extern uint16_t message_pointer_pos;
 
 static const char *TAG = "CMD";
 
+uint64_t connect_time = 0;
+
 // =======================================================================================
 
 void BeginCMD()
@@ -87,6 +89,15 @@ void AddPDPIndex(int pdpidx)
     else if (pdpidx == 3)
         message_buff[message_pointer_pos] = '3';
     message_pointer_pos++;
+}
+
+void WriteCharArrayIntoBuff(const char *a)
+{
+    for (int i = 0; i < strlen(a); i++)
+    {
+        message_buff[message_pointer_pos] = a[i];
+        message_pointer_pos++;
+    }
 }
 
 void WriteStrIntoBuff(const char *str)
@@ -290,6 +301,18 @@ bool SetQOS(Qos_enum level)
     return SendCMD();
 }
 
+bool SetKeeptime(uint16_t keeptime)
+{
+    // AT+SMCONF="KEEPTIME",60
+    BeginCMD();
+    WriteCmdIntoBuff(SMCONF, WRITE);
+    WriteStrIntoBuff(KEEPTIME);
+    ValueDelimiter();
+    WriteCharArrayIntoBuff(DecimalToCharArray(keeptime));
+    EndCMD();
+    return SendCMD();
+}
+
 bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain, const char *msg)
 {
     // AT+SMPUB=<topic>,<content length>,<qos>,<retain><CR>message is enteredQuit edit mode if message length equals to <content length>
@@ -344,6 +367,7 @@ bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain
                 message_pointer_pos++;
             }
             mqtt_publish_flag = false;
+            ESP_LOGW(TAG, "Time since connection: %d s", (int)((esp_timer_get_time() - connect_time) / (int)1000000));
             return SendCMD();
         }
     }
@@ -488,7 +512,7 @@ bool SetGNSSPowerMode(bool state)
     BeginCMD();
     WriteCmdIntoBuff(CGNSPWR, WRITE);
 
-    message_buff[message_pointer_pos] = state ? '1' : '0';
+    message_buff[message_pointer_pos] = (uint8_t)state + '0';
     message_pointer_pos++;
 
     EndCMD();
@@ -500,27 +524,27 @@ bool SetGNSSWorkMode(bool gps_mode, bool plo_mode, bool bd_mode, bool gal_mode, 
     BeginCMD();
     WriteCmdIntoBuff(CGNSMOD, WRITE);
 
-    message_buff[message_pointer_pos] = gps_mode ? '1' : '0';
+    message_buff[message_pointer_pos] = (uint8_t)gps_mode + '0';
     message_pointer_pos++;
 
     ValueDelimiter();
 
-    message_buff[message_pointer_pos] = plo_mode ? '1' : '0';
+    message_buff[message_pointer_pos] = (uint8_t)plo_mode + '0';
     message_pointer_pos++;
 
     ValueDelimiter();
 
-    message_buff[message_pointer_pos] = bd_mode ? '1' : '0';
+    message_buff[message_pointer_pos] = (uint8_t)bd_mode + '0';
     message_pointer_pos++;
 
     ValueDelimiter();
 
-    message_buff[message_pointer_pos] = gal_mode ? '1' : '0';
+    message_buff[message_pointer_pos] = (uint8_t)gal_mode + '0';
     message_pointer_pos++;
 
     ValueDelimiter();
 
-    message_buff[message_pointer_pos] = qzss_mode ? '1' : '0';
+    message_buff[message_pointer_pos] = (uint8_t)qzss_mode + '0';
     message_pointer_pos++;
 
     EndCMD();
@@ -629,7 +653,7 @@ bool CheckRF()
     EndCMD();
     if (SendCMD())
     {
-        if (StrContainsSubstr(msg_received, "99", MSG_RECEIVED_BUFF_SIZE, strlen("99")))
+        if (StrContainsSubstr(msg_received, "99", MSG_RECEIVED_BUFF_SIZE, strlen("99")) >= 0)
         {
             ESP_LOGE(TAG, "<rssi> or <ber> parameters not knowm or not detectable.");
         }
@@ -728,6 +752,34 @@ bool GetEngineeringModeInfo()
 }
 // ---------------------------------------------------------------------------------------
 
+//  TCP/UDP app --------------------------------------------------------------------------
+bool SetKeepaliveTCPUDP(bool kpalive_enable, int kpalive_idle, int kpalive_intval, int kpalive_cnt)
+{
+    BeginCMD();
+    WriteCmdIntoBuff(CACFG, WRITE);
+    WriteStrIntoBuff(KEEPALIVE);
+    ValueDelimiter();
+    message_buff[message_pointer_pos] = (char)((uint8_t)kpalive_enable + '0');
+    message_pointer_pos++;
+    ValueDelimiter();
+    WriteCharArrayIntoBuff(DecimalToCharArray(kpalive_idle));
+    ValueDelimiter();
+    WriteCharArrayIntoBuff(DecimalToCharArray(kpalive_intval));
+    ValueDelimiter();
+    WriteCharArrayIntoBuff(DecimalToCharArray(kpalive_cnt));
+    EndCMD();
+    return SendCMD();
+}
+
+bool GetTransmissionParameters()
+{
+    BeginCMD();
+    WriteCmdIntoBuff(CACFG, READ);
+    EndCMD();
+    return SendCMD();
+}
+// ---------------------------------------------------------------------------------------
+
 // NTP App -------------------------------------------------------------------------------
 bool GetSynchronizeUTCTime()
 {
@@ -814,9 +866,9 @@ bool SetPhoneFunc(Cfun_enum fun)
     EndCMD();
     if (SendCMD(15))
     {
-        if (StrContainsSubstr(msg_received, CPIN, MSG_RECEIVED_BUFF_SIZE, SIZE(CPIN)) && StrContainsSubstr(msg_received, "READY", MSG_RECEIVED_BUFF_SIZE, strlen("READY")))
+        if (StrContainsSubstr(msg_received, CPIN, MSG_RECEIVED_BUFF_SIZE, SIZE(CPIN)) >= 0 && StrContainsSubstr(msg_received, "READY", MSG_RECEIVED_BUFF_SIZE, strlen("READY")) >= 0)
         {
-            // if (StrContainsSubstr(msg_received, "NOT", MSG_RECEIVED_BUFF_SIZE, strlen("NOT")))
+            // if (StrContainsSubstr(msg_received, "NOT", MSG_RECEIVED_BUFF_SIZE, strlen("NOT")) >= 0)
             // {
             //     ESP_LOGW(TAG, );
             // }

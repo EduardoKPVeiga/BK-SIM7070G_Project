@@ -51,17 +51,24 @@ bool ValidCharArray(char *char_array, int length)
     return 1;
 }
 
-bool StrContainsSubstr(char *str, char *sub_str, int size_str, int size_sub_str)
+int StrContainsSubstr(char *str, char *sub_str, int size_str, int size_sub_str)
 {
+    bool first_time = false;
+    int begin_position = -1;
     if (size_sub_str > size_str)
-        return 0;
+        return -1;
     int i = 0, j = 0;
     for (; i < size_str; i++)
     {
         if (str[i] == sub_str[j] && j < size_str)
         {
+            if (!first_time)
+            {
+                first_time = true;
+                begin_position = i;
+            }
             if (j == size_sub_str - 1)
-                return 1;
+                return begin_position;
             j++;
         }
         else
@@ -69,7 +76,7 @@ bool StrContainsSubstr(char *str, char *sub_str, int size_str, int size_sub_str)
             j = 0;
         }
     }
-    return 0;
+    return -1;
 }
 
 bool StrContainsChar(char *str, char a, int size_str)
@@ -95,4 +102,20 @@ char *strrev(char *str)
         *p1 ^= *p2;
     }
     return str;
+}
+
+char *DecimalToCharArray(uint16_t decimal)
+{
+    if (decimal == 0)
+        return "0";
+    uint8_t digit = 0;
+    string decimal_s = "";
+    while (decimal != 0)
+    {
+        digit = decimal - ((uint16_t)(decimal / 10) * 10);
+        decimal_s += (char)(digit + '0');
+        decimal = (uint16_t)(decimal / 10);
+    }
+    char *decimal_array = strrev((char *)decimal_s.c_str());
+    return decimal_array;
 }

@@ -7,6 +7,11 @@ uint8_t cmd_failed_counter = 0;
 const int pdp = 0;
 const char ip_type = '1'; // Internet Protocol Version 4
 
+const bool keepalive_enable = true;
+const int keepalive_idle = 10;
+const int keepalive_interval = 100;
+const int keepalive_count = 10;
+
 // MQTT parameters
 const char *broker_url = "172.104.199.107";
 const char *broker_port = "1883";
@@ -31,7 +36,12 @@ const bool bd_mode = false;
 const bool gal_mode = true;
 const bool qzss_mode = false;
 
-Gsm::Gsm() { Initialize(false); }
+extern uint64_t connect_time;
+
+Gsm::Gsm()
+{
+    Initialize(false);
+}
 
 Gsm::Gsm(bool flag) { Initialize(flag); }
 
@@ -53,7 +63,11 @@ Gsm::Gsm(char sn[8])
     Initialize(false);
 }
 
-Gsm::~Gsm() { PWRKEYToGnd(); }
+Gsm::~Gsm()
+{
+    ESP_LOGI(TAG, "Deleting Gsm object...");
+    PWRKEYToGnd();
+}
 
 char *Gsm::GetSerialNumber() { return serial_num; }
 
@@ -117,7 +131,7 @@ void Gsm::PDNAutoActivation()
         ESP_LOGI(TAG, "Sending check SIM card command...");
         vTaskDelay(DELAY_ERROR_MSG);
     }
-    if (StrContainsSubstr(msg_received, "READY", MSG_RECEIVED_BUFF_SIZE, strlen("READY")))
+    if (StrContainsSubstr(msg_received, "READY", MSG_RECEIVED_BUFF_SIZE, strlen("READY")) >= 0)
         ESP_LOGI(TAG, "SIM card READY.\n");
     else
         ESP_LOGE(TAG, "SIM card error.\n");
@@ -319,7 +333,7 @@ bool Gsm::MQTTInit()
 
     while (!SetClientID(client_id))
     {
-        ESP_LOGI(TAG, "Sending client ID...");
+        ESP_LOGI(TAG, "writing client ID...");
         if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
@@ -329,7 +343,7 @@ bool Gsm::MQTTInit()
 
     while (!SetBrokerURL(broker_url, broker_port))
     {
-        ESP_LOGI(TAG, "Sending broker URL...");
+        ESP_LOGI(TAG, "writing broker URL...");
         if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
@@ -349,7 +363,7 @@ bool Gsm::MQTTInit()
 
     while (!SetAsyncmode(async_mode))
     {
-        ESP_LOGI(TAG, "Sending set asyncmode command...");
+        ESP_LOGI(TAG, "writing set asyncmode command...");
         if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
@@ -359,7 +373,7 @@ bool Gsm::MQTTInit()
 
     while (!SetSubhex(sub_hex))
     {
-        ESP_LOGI(TAG, "Sending set data type...");
+        ESP_LOGI(TAG, "writing set data type...");
         if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
@@ -369,7 +383,7 @@ bool Gsm::MQTTInit()
 
     while (!SetMessageDetails(details))
     {
-        ESP_LOGI(TAG, "Sending message details command...");
+        ESP_LOGI(TAG, "writing message details command...");
         if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
@@ -379,12 +393,22 @@ bool Gsm::MQTTInit()
 
     while (!SetQOS(qos_level))
     {
-        ESP_LOGI(TAG, "Sending set QOS command");
+        ESP_LOGI(TAG, "writing set QOS command");
         if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
     ESP_LOGI(TAG, "QOS set level.\n");
+    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
+
+    while (!SetKeeptime(3600))
+    {
+        ESP_LOGI(TAG, "writing set KEEPTIME command...");
+        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
+            return false;
+        vTaskDelay(DELAY_ERROR_MSG);
+    }
+    ESP_LOGI(TAG, "KEEPTIME set time.\n");
     this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
     while (!TestCMDMQTTParameters())
@@ -499,12 +523,12 @@ bool Gsm::mqtt_publish(char *topic, unsigned char *msg, size_t msg_length)
     if (status == OFF)
     {
         ESP_LOGW(TAG, "Disconnected, trying to connect to the MQTT broker.");
-        while (!MQTTConnect())
-        {
-            ESP_LOGW(TAG, "Connecting...");
-            vTaskDelay(DELAY_ERROR_MSG);
-        }
-        ESP_LOGI(TAG, "Connected to the broker.");
+        // while (!MQTTConnect())
+        // {
+        //     ESP_LOGW(TAG, "Connecting...");
+        //     vTaskDelay(DELAY_ERROR_MSG);
+        // }
+        // ESP_LOGI(TAG, "Connected to the broker.");
     }
     else if (status == ERROR)
         return false;
@@ -539,20 +563,31 @@ bool Gsm::GetLocation()
 MQTT_status_enum Gsm::get_mqtt_status()
 {
     MQTTStatus();
-    int index = begin_msg_received + SIZE(SMSTATE) + 4;
-    if (StrContainsSubstr(&(msg_received[begin_msg_received]), SMSTATE, msg_received_size, SIZE(SMSTATE)))
+    int index = StrContainsSubstr(&(msg_received[begin_msg_received]), SMSTATE, msg_received_size, SIZE(SMSTATE));
+    if (index >= 0)
     {
+        index += begin_msg_received + SIZE(SMSTATE) + 2;
         if (index < MSG_RECEIVED_BUFF_SIZE)
         {
-            ESP_LOGW(TAG, "msg_received[index]: %c", msg_received[index]);
+            ESP_LOGI(TAG, "msg_received[%d]: %c", index, msg_received[index]);
             if (msg_received[index] == '0')
+            {
+                ESP_LOGE(TAG, "Disconnect time: %d s", (int)((esp_timer_get_time() - connect_time) / 1000000));
                 return OFF;
+            }
             if (msg_received[index] == '1')
+            {
+                ESP_LOGI(TAG, "Time since connection: %d s", (int)((esp_timer_get_time() - connect_time) / 1000000));
                 return ON;
+            }
             if (msg_received[index] == '2')
+            {
+                ESP_LOGI(TAG, "Time since connection: %d s", (int)((esp_timer_get_time() - connect_time) / 1000000));
                 return ON;
+            }
         }
     }
+    ESP_LOGE(TAG, "Error time: %d s", (int)((esp_timer_get_time() - connect_time) / 1000000));
     return ERROR;
 }
 

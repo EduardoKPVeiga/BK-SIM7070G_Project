@@ -21,8 +21,8 @@ extern "C"
             else if (gsm->GetGpsErrorFlag())
                 ESP_LOGE(TAG, "GPS initialization failed!");
             delete gsm;
-            gsm = new Gsm("SIM7070", true);
             ESP_LOGW(TAG, "SIM7070G shutdown.");
+            gsm = new Gsm("SIM7070", true);
             gsm->get_mqtt_status();
             // ESP_LOGW(TAG, "\n\nESP restart...");
             // esp_restart();
@@ -36,20 +36,14 @@ extern "C"
         {
             ESP_LOGI(TAG, "writing MQTT msg command...");
             gsm->mqtt_publish(msg, (size_t)strlen((const char *)msg), 0);
-            vTaskDelay(5 * DELAY_ERROR_MSG);
+            vTaskDelay(20 * DELAY_ERROR_MSG);
 
             // MQTT_status_enum status = gsm->get_mqtt_status();
             // if (status != ON && status != ERROR)
             // {
-            //     ESP_LOGE(TAG, "Disconnect time: %d", (int)((esp_timer_get_time() - gsm->connect_time) / 1000));
             //     return;
             // }
-            // if (status == ERROR)
-            // {
-            //     ESP_LOGE(TAG, "Error time: %d", (int)((esp_timer_get_time() - gsm->connect_time) / 1000));
-            //     // return;
-            // }
-            // vTaskDelay(1000 / portTICK_PERIOD_MS);
+            // vTaskDelay(DELAY_ERROR_MSG * 40);
 
             // ESP_LOGI(TAG, "writing get GSM location...");
             // if (gsm->GetLocation())

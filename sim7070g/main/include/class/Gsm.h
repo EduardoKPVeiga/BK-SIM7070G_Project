@@ -46,8 +46,6 @@ private:
     void ErrorFlagReset(bool *flag, uint8_t *count);
 
 public:
-    uint64_t connect_time;
-
     Gsm();
     Gsm(bool flag);
     Gsm(char sn[8]);

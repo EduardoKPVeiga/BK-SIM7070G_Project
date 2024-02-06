@@ -15,8 +15,8 @@
 
 #define PWRKEY_T_ON 1000 / portTICK_PERIOD_MS      // ms
 #define PWRKEY_T_ON_UART 3000 / portTICK_PERIOD_MS // ms
-#define PWRKEY_T_OFF 1200 / portTICK_PERIOD_MS     // ms
-#define PWRKEY_T_OFF_VDD 1200 / portTICK_PERIOD_MS // ms
+#define PWRKEY_T_OFF 1300 / portTICK_PERIOD_MS     // ms
+#define PWRKEY_T_OFF_VDD 1300 / portTICK_PERIOD_MS // ms
 
 /**
  * Setup pins used

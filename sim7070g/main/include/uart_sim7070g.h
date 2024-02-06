@@ -16,7 +16,8 @@
 
 #define MESSAGE_BUFF_MAX_SIZE 559
 
-#define DELAY_SEND 10 // ms
+#define DELAY_SEND 10                          // ms
+#define DELAY_RECEIVED 10 / portTICK_PERIOD_MS // ms
 
 extern char message_buff[MESSAGE_BUFF_MAX_SIZE];
 extern uint16_t message_pointer_pos;
@@ -54,7 +55,7 @@ void Clean_subscribe_data();
  * @param max_resp_time : int (seconds)
  * @return true if successful, false otherwise
  */
-bool SendCMD(int max_resp_time = 10);
+bool SendCMD(int max_resp_time = 60);
 
 /**
  * Read the uart buffer

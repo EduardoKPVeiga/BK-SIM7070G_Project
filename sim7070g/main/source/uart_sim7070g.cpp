@@ -80,7 +80,7 @@ bool SendCMD(int max_resp_time)
         ESP_LOGI(TAG, "writing command - [%s]", message_buff_log);
 
     uart_write_bytes(uart_sim7070g, (const char *)message_buff, message_pointer_pos);
-    // uart_wait_tx_done(uart_sim7070g, 100);
+    uart_wait_tx_done(uart_sim7070g, 10);
 
     // Wait for a response
     int attempts = (max_resp_time * 1000) / DELAY_SEND;
@@ -97,7 +97,7 @@ bool SendCMD(int max_resp_time)
                     msg_received_LOG[k] = msg_received[j];
             }
 
-            if (StrContainsSubstr(msg_received_LOG, RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)))
+            if (StrContainsSubstr(msg_received_LOG, RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)) >= 0)
             {
                 ESP_LOGE(TAG, "Message Received - %s", msg_received_LOG);
                 received = false;
@@ -151,7 +151,6 @@ void uart2_task(void *pvParameters)
             switch (event.type)
             {
             case UART_DATA:
-                received = true;
                 old_begin = begin_msg_received;
                 begin_msg_received = end_msg_received;
                 if (end_msg_received + event.size <= MSG_RECEIVED_BUFF_SIZE)
@@ -166,7 +165,9 @@ void uart2_task(void *pvParameters)
                 msg_received_size = event.size;
                 uart_read_bytes(uart_sim7070g, &(msg_received[begin_msg_received]), msg_received_size, portMAX_DELAY);
                 uart_flush_input(uart_sim7070g);
-                if (StrContainsSubstr(&(msg_received[begin_msg_received]), SMSUB, msg_received_size, SIZE(SMSUB)))
+                vTaskDelay(DELAY_RECEIVED);
+                received = true;
+                if (StrContainsSubstr(&(msg_received[begin_msg_received]), SMSUB, msg_received_size, SIZE(SMSUB)) >= 0)
                 {
                     Clean_subscribe_data();
                     for (int j = begin_msg_received, k = 0; j < 4; j++, k++)
@@ -180,7 +181,7 @@ void uart2_task(void *pvParameters)
                 }
                 if (!StrContainsChar(&(msg_received[begin_msg_received]), '>', msg_received_size))
                 {
-                    if (!StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_OK, msg_received_size, SIZE(RESP_OK)) && !StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)))
+                    if (StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_OK, msg_received_size, SIZE(RESP_OK)) < 0 && StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)) < 0)
                     {
                         big_receive = true;
                         received = false;

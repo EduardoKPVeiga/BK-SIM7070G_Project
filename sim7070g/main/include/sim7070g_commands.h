@@ -8,6 +8,11 @@
 #include "str.h"
 #include "uart_sim7070g.h"
 #include "esp_log.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <string>
+
+using namespace std;
 
 #define BEGIN_CMD "AT\0"
 #define END_CMD "\0\r\n"
@@ -57,6 +62,9 @@
 #define CNBS "+CNBS"         // Band scan optimization
 #define CENG "+CENG"         // Engineering mode
 
+// TCP/UDP
+#define CACFG "+CACFG" // configure transparent transmission parameters
+
 // SMS
 #define CMGF "+CMGF" // Select SMS message format
 #define CMGD "+CMGD" // Delete SMS message
@@ -82,6 +90,7 @@
 #define RETAIN "RETAIN"
 #define SUBHEX "SUBHEX"
 #define ASYNCMODE "ASYNCMODE"
+#define KEEPALIVE "KEEPALIVE"
 
 // Responses
 #define RESP_OK "OK"
@@ -215,6 +224,14 @@ void EnumToCharWriteBuff(uint8_t value);
 void AddPDPIndex(int pdpidx);
 
 /**
+ * Add a char array without quotations marks in the message buffer
+ * @author Eduardo Veiga
+ * @param a : const char*
+ * @return void
+ */
+void WriteCharArrayIntoBuff(const char *a);
+
+/**
  * Add a char array in the message buffer
  * @author Eduardo Veiga
  * @param str : const char*
@@ -323,6 +340,14 @@ bool SetMessageDetails(const char *details);
  * @return true if successful, false otherwise
  */
 bool SetQOS(Qos_enum level);
+
+/**
+ * Set keeptime value
+ * @author Eduardo Veiga
+ * @param keeptime : uint16_t
+ * @return true if successful, false otherwise
+ */
+bool SetKeeptime(uint16_t keeptime);
 
 /**
  * Disable echo mode
@@ -559,6 +584,24 @@ bool SubscribePacket(const char *topic, Qos_enum qos);
  * @return true if successful, false otherwise
  */
 bool AppNetworkActiveReadCMD(int pdpidx);
+
+/**
+ * configure keepalive parameter from tcp/udp connection
+ * @author Eduardo Veiga
+ * @param kpalive_enable : bool
+ * @param kpalive_idle : int (ms)
+ * @param kpalive_intval : int (ms)
+ * @param kpalive_cnt : int
+ * @return true if successful, false otherwise
+ */
+bool SetKeepaliveTCPUDP(bool kpalive_enable, int kpalive_idle, int kpalive_intval, int kpalive_cnt);
+
+/**
+ * Get the transmission parameters
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetTransmissionParameters();
 
 /**
  * Get UTC time

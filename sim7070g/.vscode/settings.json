@@ -21,7 +21,8 @@
         "format": "cpp",
         "regex": "cpp",
         "xlocale": "cpp",
-        "xstring": "cpp"
+        "xstring": "cpp",
+        "xlocinfo": "cpp"
     },
     "idf.flashType": "UART"
 }
