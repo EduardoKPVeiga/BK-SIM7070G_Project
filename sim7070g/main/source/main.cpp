@@ -34,16 +34,16 @@ extern "C"
 
         while (1)
         {
-            ESP_LOGI(TAG, "writing MQTT msg command...");
-            gsm->mqtt_publish(msg, (size_t)strlen((const char *)msg), 0);
-            vTaskDelay(20 * DELAY_ERROR_MSG);
+            // ESP_LOGI(TAG, "writing MQTT msg command...");
+            // gsm->mqtt_publish(msg, (size_t)strlen((const char *)msg), 0);
+            // vTaskDelay(30 * DELAY_ERROR_MSG);
 
-            // MQTT_status_enum status = gsm->get_mqtt_status();
-            // if (status != ON && status != ERROR)
-            // {
-            //     return;
-            // }
-            // vTaskDelay(DELAY_ERROR_MSG * 40);
+            MQTT_status_enum status = gsm->get_mqtt_status();
+            if (status != ON && status != ERROR)
+            {
+                return;
+            }
+            vTaskDelay(20 * DELAY_ERROR_MSG);
 
             // ESP_LOGI(TAG, "writing get GSM location...");
             // if (gsm->GetLocation())

@@ -12,6 +12,8 @@ const int keepalive_idle = 10;
 const int keepalive_interval = 100;
 const int keepalive_count = 10;
 
+const uint16_t keeptime = 5;
+
 // MQTT parameters
 const char *broker_url = "172.104.199.107";
 const char *broker_port = "1883";
@@ -67,6 +69,7 @@ Gsm::~Gsm()
 {
     ESP_LOGI(TAG, "Deleting Gsm object...");
     PWRKEYToGnd();
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
 }
 
 char *Gsm::GetSerialNumber() { return serial_num; }
@@ -401,7 +404,7 @@ bool Gsm::MQTTInit()
     ESP_LOGI(TAG, "QOS set level.\n");
     this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
-    while (!SetKeeptime(3600))
+    while (!SetKeeptime(keeptime))
     {
         ESP_LOGI(TAG, "writing set KEEPTIME command...");
         if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
@@ -569,7 +572,7 @@ MQTT_status_enum Gsm::get_mqtt_status()
         index += begin_msg_received + SIZE(SMSTATE) + 2;
         if (index < MSG_RECEIVED_BUFF_SIZE)
         {
-            ESP_LOGI(TAG, "msg_received[%d]: %c", index, msg_received[index]);
+            // ESP_LOGI(TAG, "msg_received[%d]: %c", index, msg_received[index]);
             if (msg_received[index] == '0')
             {
                 ESP_LOGE(TAG, "Disconnect time: %d s", (int)((esp_timer_get_time() - connect_time) / 1000000));

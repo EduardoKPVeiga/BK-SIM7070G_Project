@@ -68,11 +68,15 @@ int StrContainsSubstr(char *str, char *sub_str, int size_str, int size_sub_str)
                 begin_position = i;
             }
             if (j == size_sub_str - 1)
+            {
                 return begin_position;
+            }
             j++;
         }
         else
         {
+            first_time = false;
+            begin_position = -1;
             j = 0;
         }
     }

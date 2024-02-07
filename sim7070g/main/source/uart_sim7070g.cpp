@@ -56,7 +56,7 @@ void Clean_subscribe_data()
 
 bool SendCMD(int max_resp_time)
 {
-    ESP_LOGI(TAG, "message_pointer_pos: %d", message_pointer_pos);
+    // ESP_LOGI(TAG, "message_pointer_pos: %d", message_pointer_pos);
     char message_buff_log[message_pointer_pos] = {0};
 
     bool has_str_end = false;
