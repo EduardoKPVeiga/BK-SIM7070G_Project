@@ -14,7 +14,7 @@
 
 using namespace std;
 
-#define BEGIN_CMD "AT\0"
+#define BEGIN_CMD "AT"
 #define END_CMD "\0\r\n"
 #define RESP_DELIMITER "<CR><LF>"
 #define CMD_DELIMITER ";"
@@ -23,18 +23,19 @@ using namespace std;
 #define READ_CMD "?"
 #define WRITE_CMD "="
 
-#define ECHO_OFF "AT\0E0"
+#define ECHO_OFF "ATE0"
 
 // MQTT commands
-#define SMCONF "+SMCONF"   // Set MQTT Parameter
-#define SMSSL "+SMSSL"     // Select SSL Configure
-#define SMCONN "+SMCONN"   // MQTT Connection
-#define SMPUB "+SMPUB"     // Send Packet
-#define SMSUB "+SMSUB"     // Subscribe Packet
-#define SMUNSUB "+SMUNSUB" // Unsubscribe Packet
-#define SMDISC "+SMDISC"   // Disconnection MQTT
-#define SMPUB "+SMPUB"     // Send packet
-#define SMSTATE "+SMSTATE" // MQTT connection status
+#define SMCONF "+SMCONF"         // Set MQTT Parameter
+#define SMSSL "+SMSSL"           // Select SSL Configure
+#define SMCONN "+SMCONN"         // MQTT Connection
+#define SMPUB "+SMPUB"           // Send Packet
+#define SMSUB "+SMSUB"           // Subscribe Packet
+#define SMUNSUB "+SMUNSUB"       // Unsubscribe Packet
+#define SMDISC "+SMDISC"         // Disconnection MQTT
+#define SMPUB "+SMPUB"           // Send packet
+#define SMSTATE "+SMSTATE"       // MQTT connection status
+#define SMRCVSLPTM "+SMRCVSLPTM" // Set MQTT thread sleep time
 
 // GPRS
 #define SNPING4 "+SNPING4" // Ping IPV4
@@ -61,6 +62,8 @@ using namespace std;
 #define CFUN "+CFUN"         // Set Phone Functionality
 #define CNBS "+CNBS"         // Band scan optimization
 #define CENG "+CENG"         // Engineering mode
+#define CSCLK "+CSCLK"       // Configure slow clock
+#define CPSMS "+CPSMS"       // Power saving mode setting
 
 // TCP/UDP
 #define CACFG "+CACFG" // configure transparent transmission parameters
@@ -98,6 +101,12 @@ using namespace std;
 #define RESP_DEACTIVE "DEACTIVE"
 
 #define MQTT_PUB_TIMER 15000 // ms
+
+enum Thread_action_enum
+{
+    DELETE_TH = 0,
+    WRITE_TH = 1
+};
 
 enum CMD_action_enum
 {
@@ -248,6 +257,15 @@ void WriteStrIntoBuff(const char *str);
  */
 void WriteCmdIntoBuff(const char *cmd, CMD_action_enum action);
 
+/**
+ * Set MQTT thread sleep configuration
+ * @author Eduardo Veiga
+ * @param action : Thread_action_enum
+ * @param tima : uint16_t (10 - 500)
+ * @return true if successful, false otherwise
+ */
+bool SetMqttThreadSleepTime(Thread_action_enum action, uint16_t time);
+
 /*
  * Connect to MQTT broker
  * @author Eduardo Veiga
@@ -348,6 +366,30 @@ bool SetQOS(Qos_enum level);
  * @return true if successful, false otherwise
  */
 bool SetKeeptime(uint16_t keeptime);
+
+/**
+ * Set cleanss flag
+ * @author Eduardo Veiga
+ * @param cleanss : bool
+ * @return true if successful, false otherwise
+ */
+bool SetCleanss(bool cleanss);
+
+/**
+ * Set user name
+ * @author Eduardo Veiga
+ * @param usname : const char*
+ * @return true if successful, false otherwise
+ */
+bool SetUsername(const char *usname);
+
+/**
+ * Set password
+ * @author Eduardo Veiga
+ * @param pass : const char*
+ * @return true if successful, false otherwise
+ */
+bool SetPassword(const char *pass);
 
 /**
  * Disable echo mode
@@ -510,9 +552,11 @@ bool QueryNetworkInfo();
  * @param pdpidx : int (0, 1, 2, 3)
  * @param ip_type : const char ('0', '1', '2', '3', '4')
  * @param apn : const char*
+ * @param user : const char*
+ * @param password : const char*
  * @return true if successful, false otherwise
  */
-bool PDPConfigure(int pdpidx, const char ip_type, const char *apn);
+bool PDPConfigure(int pdpidx, const char ip_type, const char *apn, const char *user, const char *password);
 
 /**
  * PDP configure read command
@@ -551,6 +595,36 @@ bool GetBandScanConfig();
 bool GetEngineeringModeInfo();
 
 /**
+ * Configure slow clock mode
+ * @author Eduardo Veiga
+ * @param mode : bool
+ * @return true if successful, false otherwise
+ */
+bool SetSlowClockMode(bool mode);
+
+/**
+ * Get slow clock mode
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetSlowClockMode();
+
+/**
+ * Set power saving mode setting
+ * @author Eduardo Veiga
+ * @param mode : bool
+ * @return true if successful, false otherwise
+ */
+bool SetPowerSavingMode(bool mode);
+
+/**
+ * Get power saving mode
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetPowerSavingMode();
+
+/**
  * Send packet through MQTT
  * @author Eduardo Veiga
  * @param topic : const char*
@@ -577,6 +651,14 @@ bool TestSendPacket();
  * @return true if successful, false otherwise
  */
 bool SubscribePacket(const char *topic, Qos_enum qos);
+
+/**
+ * MQTT topic unsubscribe
+ * @author Eduardo Veiga
+ * @param topic : const char*
+ * @return true if successful, false otherwise
+ */
+bool UnsubscribePacket(const char *topic);
 
 /**
  * APP network active read command
@@ -626,6 +708,13 @@ bool APPNetworkActive(int pdpidx, Action_enum action);
  * @return true if successful, false otherwise
  */
 bool SetPhoneFunc(Cfun_enum fun);
+
+/**
+ * Get phone functionality
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetPhoneFunc();
 
 /**
  * Get coordinates from Base Station Location

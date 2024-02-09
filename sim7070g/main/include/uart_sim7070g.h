@@ -27,6 +27,7 @@ extern uint16_t begin_msg_received;
 extern uint16_t end_msg_received;
 extern bool received;
 extern bool mqtt_publish_flag;
+extern uint64_t time_last_msg;
 
 /**
  * Initialize UART
@@ -55,7 +56,7 @@ void Clean_subscribe_data();
  * @param max_resp_time : int (seconds)
  * @return true if successful, false otherwise
  */
-bool SendCMD(int max_resp_time = 60);
+bool SendCMD(int max_resp_time = 30);
 
 /**
  * Read the uart buffer

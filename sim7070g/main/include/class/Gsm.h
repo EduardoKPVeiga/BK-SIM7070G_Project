@@ -11,10 +11,12 @@
 #include "../uart_sim7070g.h"
 #include "esp_log.h"
 
-#define DELAY_ERROR_MSG 1000 / portTICK_PERIOD_MS
+#define DELAY_ERROR_MSG 100 / portTICK_PERIOD_MS
 #define ERROR_FLAG_MAX 6
 
 using namespace std;
+
+extern const char *client_id;
 
 enum MQTT_status_enum
 {
@@ -38,7 +40,7 @@ private:
     void PDNAutoActivation();
     bool PDNManualActivation();
 
-    bool MQTTInit();
+    // bool MQTTInit();
     bool GNSSInit();
     void GPRSInit();
 
@@ -48,9 +50,10 @@ private:
 public:
     Gsm();
     Gsm(bool flag);
-    Gsm(char sn[8]);
-    Gsm(char sn[8], bool flag);
+    Gsm(const char sn[8]);
+    Gsm(const char sn[8], bool flag);
     ~Gsm();
+    bool MQTTInit();
 
     char *GetSerialNumber();
     void SetSerialNumber(const char sn[8]);
@@ -62,6 +65,7 @@ public:
     bool mqtt_publish(char *topic, unsigned char *msg, size_t msg_length);
     bool mqtt_publish(unsigned char *msg, size_t msg_length, int slot);
     bool GetLocation();
+    int GetPSWMode();
 
     MQTT_status_enum get_mqtt_status();
 

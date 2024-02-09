@@ -11,6 +11,7 @@ bool received = false;
 bool mqtt_publish_flag = false;
 
 static const char *TAG = "Uart";
+uint64_t time_last_msg = 0;
 
 char message_buff[MESSAGE_BUFF_MAX_SIZE] = {0};
 uint16_t message_pointer_pos = 0;
@@ -62,10 +63,7 @@ bool SendCMD(int max_resp_time)
     bool has_str_end = false;
     for (int j = 0; j < message_pointer_pos; j++)
     {
-        if (message_buff[j] == '\0' && j < message_pointer_pos - 3)
-            message_buff_log[j] = '/';
-        else
-            message_buff_log[j] = message_buff[j];
+        message_buff_log[j] = message_buff[j];
         if (message_buff_log[j] == '\0')
             has_str_end = true;
     }
@@ -92,7 +90,7 @@ bool SendCMD(int max_resp_time)
             for (int j = begin_msg_received, k = 0; j < end_msg_received; j++, k++)
             {
                 if (msg_received[j] == '\0')
-                    msg_received_LOG[k] = '/';
+                    msg_received_LOG[k] = ' ';
                 else
                     msg_received_LOG[k] = msg_received[j];
             }
@@ -151,6 +149,7 @@ void uart2_task(void *pvParameters)
             switch (event.type)
             {
             case UART_DATA:
+                time_last_msg = esp_timer_get_time();
                 old_begin = begin_msg_received;
                 begin_msg_received = end_msg_received;
                 if (end_msg_received + event.size <= MSG_RECEIVED_BUFF_SIZE)
@@ -167,16 +166,11 @@ void uart2_task(void *pvParameters)
                 uart_flush_input(uart_sim7070g);
                 vTaskDelay(DELAY_RECEIVED);
                 received = true;
-                if (StrContainsSubstr(&(msg_received[begin_msg_received]), SMSUB, msg_received_size, SIZE(SMSUB)) >= 0)
+                if (StrContainsSubstr(&(msg_received[begin_msg_received]), SMSUB, msg_received_size, SIZE(SMSUB)) >= 0 && StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_OK, msg_received_size, SIZE(RESP_OK)) < 0)
                 {
                     Clean_subscribe_data();
-                    for (int j = begin_msg_received, k = 0; j < 4; j++, k++)
-                    {
-                        if (msg_received[j] == '\0')
-                            subscribe_data[k] = '/';
-                        else
-                            subscribe_data[k] = msg_received[j];
-                    }
+                    for (int j = begin_msg_received, k = 0; j < end_msg_received; j++, k++)
+                        subscribe_data[k] = msg_received[j];
                     ESP_LOGI(TAG, "%s", subscribe_data);
                 }
                 if (!StrContainsChar(&(msg_received[begin_msg_received]), '>', msg_received_size))
