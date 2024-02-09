@@ -1,6 +1,12 @@
 #ifndef GSM_H_
 #define GSM_H_
 
+#define TINY_GSM_MODEM_SIM7080
+
+#include "../../../lib/TinyGSM/src/TinyGsmClient.h"
+#include "../../../lib/PubSubClient-2.8.0/src/PubSubClient.h"
+#include <HardwareSerial.h>
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string>
@@ -13,6 +19,14 @@
 
 #define DELAY_ERROR_MSG 100 / portTICK_PERIOD_MS
 #define ERROR_FLAG_MAX 6
+
+#define BAUD 115200
+
+#define TINY_GSM_USE_GPRS false
+#define TINY_GSM_USE_WIFI true
+#define PWRKEY GPIO_NUM_27
+#define PWRKEY_T_ON 1000 / portTICK_PERIOD_MS      // ms
+#define PWRKEY_T_ON_UART 3000 / portTICK_PERIOD_MS // ms
 
 using namespace std;
 
@@ -37,15 +51,11 @@ private:
 
     void Initialize(bool flag);
 
-    void PDNAutoActivation();
-    bool PDNManualActivation();
-
-    // bool MQTTInit();
-    bool GNSSInit();
-    void GPRSInit();
-
     bool ErrorFlagCount(bool *flag, uint8_t *count);
     void ErrorFlagReset(bool *flag, uint8_t *count);
+
+    void mqttCallback(char *topic, byte *payload, unsigned int len);
+    boolean mqttConnect();
 
 public:
     Gsm();
@@ -53,7 +63,6 @@ public:
     Gsm(const char sn[8]);
     Gsm(const char sn[8], bool flag);
     ~Gsm();
-    bool MQTTInit();
 
     char *GetSerialNumber();
     void SetSerialNumber(const char sn[8]);
@@ -66,8 +75,6 @@ public:
     bool mqtt_publish(unsigned char *msg, size_t msg_length, int slot);
     bool GetLocation();
     int GetPSWMode();
-
-    MQTT_status_enum get_mqtt_status();
 
     double GetLatitude();
     double GetLongitude();
