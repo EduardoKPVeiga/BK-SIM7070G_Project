@@ -1,8 +1,6 @@
 #ifndef INTERFACE_H_
 #define INTERFACE_H_
 
-#include "../sim7070g_commands.h"
-
 class Interface
 {
 private:

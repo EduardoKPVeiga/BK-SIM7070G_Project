@@ -3,16 +3,14 @@
 
 #define TINY_GSM_MODEM_SIM7080
 
-#include "../../../lib/TinyGSM/src/TinyGsmClient.h"
-#include "../../../lib/PubSubClient-2.8.0/src/PubSubClient.h"
+#include <TinyGsmClient.h>
+#include <PubSubClient.h>
 #include <HardwareSerial.h>
-
 #include <stdio.h>
 #include <stdint.h>
 #include <string>
 #include <iostream>
 #include "Interface.h"
-#include "../sim7070g_commands.h"
 #include "../pins.h"
 #include "../uart_sim7070g.h"
 #include "esp_log.h"
@@ -48,6 +46,12 @@ private:
     bool gsm_error;
     bool mqtt_error;
     bool gps_error;
+
+    HardwareSerial SerialAT(1);
+
+    TinyGsm modem(SerialAT);
+    TinyGsmClient client(modem);
+    PubSubClient mqtt(client);
 
     void Initialize(bool flag);
 

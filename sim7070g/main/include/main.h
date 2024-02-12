@@ -5,7 +5,6 @@
 
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
-#include "sim7070g_commands.h"
 #include "esp_log.h"
 #include "uart_sim7070g.h"
 #include <stdlib.h>

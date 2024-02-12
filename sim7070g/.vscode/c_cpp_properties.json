@@ -9,7 +9,9 @@
                 "${config:idf.espAdfPath}/components/**",
                 "${config:idf.espAdfPathWin}/components/**",
                 "${workspaceFolder}/**",
-                "C:\\Users\\epont\\source\\repos\\BK-SIM7070G_Project\\sim7070g\\main\\include"
+                "C:/Users/epont/OneDrive/Documentos/Arduino/libraries/PubSubClient-2.8.0/src",
+                "C:/Users/epont/OneDrive/Documentos/Arduino/libraries/TinyGSM/src",
+                "C:/Users/epont/source/repos/BK-SIM7070G_Project/sim7070g/main/include"
             ],
             "browse": {
                 "path": [
@@ -17,7 +19,9 @@
                     "${config:idf.espIdfPathWin}/components",
                     "${config:idf.espAdfPath}/components/**",
                     "${config:idf.espAdfPathWin}/components/**",
-                    "${workspaceFolder}"
+                    "${workspaceFolder}",
+                    "C:/Users/epont/OneDrive/Documentos/Arduino/libraries/PubSubClient-2.8.0/src",
+                    "C:/Users/epont/OneDrive/Documentos/Arduino/libraries/TinyGSM/src"
                 ],
                 "limitSymbolsToIncludedHeaders": false
             }

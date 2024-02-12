@@ -23,12 +23,6 @@ const char *pdp_type = "IP";
 
 extern uint64_t connect_time;
 
-HardwareSerial SerialAT(1);
-
-TinyGsm modem(SerialAT);
-TinyGsmClient client(modem);
-PubSubClient mqtt(client);
-
 const char *broker = "172.104.199.107";
 const char apn[] = "zap.vivo.com.br";
 const char *topic = "GsmClientTest";
@@ -82,23 +76,6 @@ void Gsm::Initialize(bool flag)
     ESP_LOGI(TAG, "\n\nSIM7070G Init.");
     vTaskDelay(DELAY_ERROR_MSG);
 
-    // uint8_t count = 0;
-    // while (!EchoBackOff())
-    // {
-    //     ESP_LOGI(TAG, "Sending echo command...");
-    //     if (count == ERROR_FLAG_MAX)
-    //     {
-    //         this->gsm_error = true;
-    //         this->mqtt_error = true;
-    //         this->gps_error = true;
-    //         ESP_LOGE(TAG, "\n\nEcho cmd error!");
-    //         return;
-    //     }
-    //     count++;
-    //     vTaskDelay(DELAY_ERROR_MSG);
-    // }
-    // ESP_LOGI(TAG, "Echo mode disabled.\n");
-
     this->gsm_error = false;
     this->mqtt_error = false;
     this->gps_error = false;
@@ -151,24 +128,12 @@ boolean Gsm::mqttConnect()
 
 bool Gsm::mqtt_publish(char *topic, unsigned char *msg, size_t msg_length)
 {
-    MQTT_status_enum status = this->get_mqtt_status();
-    if (status == OFF)
+
+    if (!mqtt.connected())
     {
-        ESP_LOGW(TAG, "Disconnected, trying to connect to the MQTT broker.");
-        if (MQTTConnect())
-        {
-            ESP_LOGW(TAG, "Connected command.");
-            vTaskDelay(DELAY_ERROR_MSG);
-        }
-        else
-            return false;
-        status = this->get_mqtt_status();
-        if (status != ON)
-            return false;
-    }
-    ESP_LOGI(TAG, "Connected to the broker.");
-    if (status == ERROR)
+        ESP_LOGE(TAG, "ERROR: disconnected from broker!");
         return false;
+    }
     uint16_t size = (uint16_t)msg_length;
     uint8_t digit = 0;
     string length = "";
