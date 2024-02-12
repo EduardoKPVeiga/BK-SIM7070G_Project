@@ -64,9 +64,12 @@ using namespace std;
 #define CENG "+CENG"         // Engineering mode
 #define CSCLK "+CSCLK"       // Configure slow clock
 #define CPSMS "+CPSMS"       // Power saving mode setting
+#define CLTS "+CLTS"         // Get local timestamp
+#define CBATCHK "+CBATCHK"   // Set VBAT checking feature ON/OFF
 
 // TCP/UDP
-#define CACFG "+CACFG" // configure transparent transmission parameters
+#define CACFG "+CACFG"   // configure transparent transmission parameters
+#define CAOPEN "+CAOPEN" // Open a TCP/UDP connection
 
 // SMS
 #define CMGF "+CMGF" // Select SMS message format
@@ -215,22 +218,6 @@ void ReadCMD();
  * @return true if successful, false otherwise
  */
 void TestCMD();
-
-/**
- * Write enum as a char
- * @author Eduardo Veiga
- * @param value : uint8_t
- * @return void
- */
-void EnumToCharWriteBuff(uint8_t value);
-
-/**
- * PDP index from int to char
- * @author Eduardo Veiga
- * @param pdpidx : int
- * @return void
- */
-void AddPDPIndex(int pdpidx);
 
 /**
  * Add a char array without quotations marks in the message buffer
@@ -413,21 +400,6 @@ bool PingIPV4(const char *ipaddress, const char *count = "1", const char *size =
  * @return true if successful, false otherwise
  */
 bool GPRSAttachment(bool active);
-
-/**
- * Define PDP context
- * @author Eduardo Veiga
- * @param cid : const char (1..15)
- * @param pdp_type : const char*
- * @param apn : const char*
- * @param pdp_addr : const char*
- * @param d_comp : D_comp_enum
- * @param h_comp : H_comp_enum
- * @param ipv4_ctrl : bool
- * @param emergency_flag : bool
- * @return true if successful, false otherwise
- */
-bool PDPContext(const char cid, const char *pdp_type, const char *apn, const char *pdp_addr, D_comp_enum d_comp, H_comp_enum h_comp, bool ipv4_ctrl, bool emergency_flag);
 
 /**
  * Define PDP context
@@ -625,6 +597,23 @@ bool SetPowerSavingMode(bool mode);
 bool GetPowerSavingMode();
 
 /**
+ * Get local time stamp
+ * @author Eduardo Veiga
+ * @param mode : bool
+ * @return true if successful, false otherwise
+ */
+bool GetLocalTimeStamp(bool mode);
+
+/**
+ * Set or get the VBAT checking feature
+ * @author Eduardo Veiga
+ * @param mode : bool
+ * @param action : CMD_action_enum
+ * @return : true if successful, false otherwise
+ */
+bool VBATCheckingFeature(bool mode, CMD_action_enum action);
+
+/**
  * Send packet through MQTT
  * @author Eduardo Veiga
  * @param topic : const char*
@@ -684,6 +673,18 @@ bool SetKeepaliveTCPUDP(bool kpalive_enable, int kpalive_idle, int kpalive_intva
  * @return true if successful, false otherwise
  */
 bool GetTransmissionParameters();
+
+/**
+ * Open a TCP/UDP connection
+ * @author Eduardo Veiga
+ * @param cid : int
+ * @param pdp_index : int
+ * @param conn_type : const char*
+ * @param server : const char*
+ * @param port : const char*
+ * @return true if successful, false otherwise
+ */
+bool OpenTCPconnection(int cid, int pdp_index, const char *conn_type, const char *server, const char *port);
 
 /**
  * Get UTC time

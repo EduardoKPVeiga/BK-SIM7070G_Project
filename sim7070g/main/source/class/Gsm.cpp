@@ -7,6 +7,10 @@ const char ip_type = '1'; // Internet Protocol Version 4
 const char *pdp_user = "vivo";
 const char *pdp_password = "vivo";
 
+const char *conn_type = "TCP";
+
+const bool local_timestamp = true;
+
 // MQTT parameters
 const char *broker_url = "172.104.199.107";
 const char *broker_port = "1883";
@@ -86,28 +90,64 @@ void Gsm::Initialize(bool flag)
     ESP_LOGI(TAG, "\n\nSIM7070G Init.");
     vTaskDelay(DELAY_ERROR_MSG);
 
-    // uint8_t count = 0;
-    // while (!EchoBackOff())
-    // {
-    //     ESP_LOGI(TAG, "Sending echo command...");
-    //     if (count == ERROR_FLAG_MAX)
-    //     {
-    //         this->gsm_error = true;
-    //         this->mqtt_error = true;
-    //         this->gps_error = true;
-    //         ESP_LOGE(TAG, "\n\nEcho cmd error!");
-    //         return;
-    //     }
-    //     count++;
-    //     vTaskDelay(DELAY_ERROR_MSG);
-    // }
-    // ESP_LOGI(TAG, "Echo mode disabled.\n");
+    BeginCMD();
+    SendCMD(1);
+
+    uint8_t count = 0;
+    while (!EchoBackOff())
+    {
+        ESP_LOGI(TAG, "Sending echo command...");
+        if (count == ERROR_FLAG_MAX)
+        {
+            this->gsm_error = true;
+            this->mqtt_error = true;
+            this->gps_error = true;
+            ESP_LOGE(TAG, "\n\nEcho cmd error!");
+            return;
+        }
+        count++;
+        vTaskDelay(DELAY_ERROR_MSG);
+    }
+    ESP_LOGI(TAG, "Echo mode disabled.\n");
+
+    count = 0;
+    while (!GetLocalTimeStamp(local_timestamp))
+    {
+        ESP_LOGI(TAG, "Sending get local timestamp command...");
+        if (count == ERROR_FLAG_MAX)
+        {
+            this->gsm_error = true;
+            this->mqtt_error = true;
+            this->gps_error = true;
+            ESP_LOGE(TAG, "\n\nGet time stamp cmd error!");
+            return;
+        }
+        count++;
+        vTaskDelay(DELAY_ERROR_MSG);
+    }
+    ESP_LOGI(TAG, "Get local time stamp mode.\n");
+
+    count = 0;
+    while (!VBATCheckingFeature(true, WRITE))
+    {
+        ESP_LOGI(TAG, "Sending get local timestamp command...");
+        if (count == ERROR_FLAG_MAX)
+        {
+            this->gsm_error = true;
+            this->mqtt_error = true;
+            this->gps_error = true;
+            ESP_LOGE(TAG, "\n\nGet time stamp cmd error!");
+            return;
+        }
+        count++;
+        vTaskDelay(DELAY_ERROR_MSG);
+    }
+    ESP_LOGI(TAG, "Get local time stamp mode.\n");
 
     this->gsm_error = false;
     this->mqtt_error = false;
     this->gps_error = false;
 
-    // PDNAutoActivation();
     if (!PDNManualActivation())
         return;
     if (!MQTTInit())
@@ -117,91 +157,17 @@ void Gsm::Initialize(bool flag)
     // GPRSInit();
 }
 
-void Gsm::PDNAutoActivation()
-{
-    ESP_LOGI(TAG, "Sending check SIM card command...");
-    while (!CheckSIMCard())
-    {
-        ESP_LOGI(TAG, "Sending check SIM card command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-    if (StrContainsSubstr(msg_received, "READY", MSG_RECEIVED_BUFF_SIZE, strlen("READY")) >= 0)
-        ESP_LOGI(TAG, "SIM card READY.\n");
-    else
-        ESP_LOGE(TAG, "SIM card error.\n");
-
-    ESP_LOGI(TAG, "Sending set network type command...");
-    while (!SetNetworkType(NB_IOT))
-    {
-        ESP_LOGI(TAG, "Sending set network type command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-    ESP_LOGI(TAG, "Network selected.\n");
-
-    ESP_LOGI(TAG, "Sending check RF signal command...");
-    while (!CheckRF())
-    {
-        ESP_LOGI(TAG, "Sending check RF signal command...");
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-    }
-
-    ESP_LOGI(TAG, "Sending check PS service command...");
-    while (!CheckPSService())
-    {
-        ESP_LOGI(TAG, "Sending check PS service command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-
-    ESP_LOGI(TAG, "Sending query nertwork information command...");
-    while (!QueryNetworkInfo())
-    {
-        ESP_LOGI(TAG, "Sending query nertwork information command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-
-    ESP_LOGI(TAG, "Sending get nertwork APN command...");
-    while (!GetNetworkAPN())
-    {
-        ESP_LOGI(TAG, "Sending get nertwork APN command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-
-    ESP_LOGI(TAG, "Sending PDP configure command...");
-    while (!PDPConfigure(pdp, ip_type, apn_vivo, pdp_user, pdp_password))
-    {
-        ESP_LOGI(TAG, "Sending PDP configure command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-    PDPConfigureReadCMD();
-    ESP_LOGI(TAG, "PDP configured.\n");
-
-    ESP_LOGI(TAG, "Sending set EPS network status command...");
-    while (!SetEPSNetworkStatus('1'))
-    {
-        ESP_LOGI(TAG, "Sending set EPS network status command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-    ESP_LOGI(TAG, "Set EPS network status.\n");
-
-    // while (!BandTest())
-    // {
-    //     ESP_LOGI(TAG, "Sending band test command...");
-    //     vTaskDelay(DELAY_ERROR_MSG);
-    // }
-
-    ESP_LOGI(TAG, "Sending APP network active command...");
-    while (!APPNetworkActive(pdp, ACTIVED))
-    {
-        AppNetworkActiveReadCMD(pdp);
-        ESP_LOGI(TAG, "Sending APP network active command...");
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-    }
-    ESP_LOGI(TAG, "APP network actived.\n");
-}
-
 bool Gsm::PDNManualActivation()
 {
     uint8_t error_cont = 0;
+
+    ESP_LOGI(TAG, "Sending GPRS attachment command...");
+    while (!GPRSAttachment(true))
+    {
+        ESP_LOGI(TAG, "Sending GPRS attachment command...");
+        vTaskDelay(DELAY_ERROR_MSG);
+    }
+    ESP_LOGI(TAG, "GPRS attached.\n");
 
     // Disable RF
     ESP_LOGI(TAG, "writing set phone functionality command...");
@@ -227,17 +193,13 @@ bool Gsm::PDNManualActivation()
     ESP_LOGI(TAG, "Set PDP context.\n");
     this->ErrorFlagReset(&(this->gsm_error), &error_cont);
 
-    // Enable RF
-    ESP_LOGI(TAG, "writing set phone functionality command...");
-    while (!SetPhoneFunc(FULL_FUNC))
+    ESP_LOGI(TAG, "Sending GPRS attachment command...");
+    while (!GPRSAttachment(true))
     {
-        ESP_LOGI(TAG, "writing set phone functionality command...");
-        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
-            return false;
+        ESP_LOGI(TAG, "Sending GPRS attachment command...");
         vTaskDelay(DELAY_ERROR_MSG);
     }
-    ESP_LOGI(TAG, "Set phone.\n");
-    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
+    ESP_LOGI(TAG, "GPRS attached.\n");
 
     /*
         // Check PS service. 1 indicates PS has attached.
@@ -263,7 +225,7 @@ bool Gsm::PDNManualActivation()
     }
     this->ErrorFlagReset(&(this->gsm_error), &error_cont);
 
-    // Before activation please use AT+CNCFGtoset APN\user name\password if needed.
+    // Before activation please use AT+CNCFG to set APN\user name\password if needed.
     ESP_LOGI(TAG, "writing PDP configure command...");
     while (!PDPConfigure(pdp, ip_type, apn_vivo, pdp_user, pdp_password))
     {
@@ -274,6 +236,18 @@ bool Gsm::PDNManualActivation()
     }
     PDPConfigureReadCMD();
     ESP_LOGI(TAG, "PDP configured.\n");
+    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
+
+    // Enable RF
+    ESP_LOGI(TAG, "writing set phone functionality command...");
+    while (!SetPhoneFunc(FULL_FUNC))
+    {
+        ESP_LOGI(TAG, "writing set phone functionality command...");
+        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
+            return false;
+        vTaskDelay(DELAY_ERROR_MSG);
+    }
+    ESP_LOGI(TAG, "Set phone.\n");
     this->ErrorFlagReset(&(this->gsm_error), &error_cont);
 
     /*
@@ -457,6 +431,17 @@ bool Gsm::MQTTInit()
     }
     this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
+    ESP_LOGI(TAG, "Establishing connection...");
+    while (!OpenTCPconnection(cid, pdp, conn_type, broker_url, broker_port))
+    {
+        ESP_LOGI(TAG, "Establishing connection...");
+        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
+            return false;
+        vTaskDelay(DELAY_ERROR_MSG);
+    }
+    ESP_LOGI(TAG, "Connected.\n");
+    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
+
     while (!MQTTConnect())
     {
         ESP_LOGI(TAG, "Connecting to broker...");
@@ -635,7 +620,7 @@ int Gsm::GetPSWMode()
 MQTT_status_enum Gsm::get_mqtt_status()
 {
     MQTTStatus();
-    int index = StrContainsSubstr(&(msg_received[begin_msg_received + SIZE(BEGIN_CMD) + SIZE(SMSTATE)]), SMSTATE, msg_received_size - SIZE(BEGIN_CMD) - SIZE(SMSTATE), SIZE(SMSTATE));
+    int index = StrContainsSubstr(&(msg_received[begin_msg_received]), SMSTATE, msg_received_size, SIZE(SMSTATE));
     if (index >= 0)
     {
         index += begin_msg_received + SIZE(SMSTATE) + 2;

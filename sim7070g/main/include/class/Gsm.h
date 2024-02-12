@@ -37,10 +37,8 @@ private:
 
     void Initialize(bool flag);
 
-    void PDNAutoActivation();
     bool PDNManualActivation();
-
-    // bool MQTTInit();
+    bool MQTTInit();
     bool GNSSInit();
     void GPRSInit();
 
@@ -53,7 +51,6 @@ public:
     Gsm(const char sn[8]);
     Gsm(const char sn[8], bool flag);
     ~Gsm();
-    bool MQTTInit();
 
     char *GetSerialNumber();
     void SetSerialNumber(const char sn[8]);
