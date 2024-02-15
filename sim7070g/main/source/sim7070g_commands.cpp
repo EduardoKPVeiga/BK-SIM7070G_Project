@@ -632,6 +632,9 @@ bool PDPConfigure(int pdpidx, const char ip_type, const char *apn, const char *u
     WriteStrIntoBuff(user);
     ValueDelimiter();
     WriteStrIntoBuff(password);
+    ValueDelimiter();
+    message_buff[message_pointer_pos] = '0';
+    message_pointer_pos++;
     EndCMD();
     return SendCMD();
 }
@@ -740,6 +743,24 @@ bool VBATCheckingFeature(bool mode, CMD_action_enum action)
         message_buff[message_pointer_pos] = mode ? '1' : '0';
         message_pointer_pos++;
     }
+    EndCMD();
+    return SendCMD();
+}
+
+bool SetPreferredMode(Connection_mode_enum mode)
+{
+    BeginCMD();
+    WriteCmdIntoBuff(CNMP, WRITE);
+    message_buff[message_pointer_pos] = (uint8_t)mode + '0';
+    message_pointer_pos++;
+    EndCMD();
+    return SendCMD();
+}
+
+bool GetPreferredMode()
+{
+    BeginCMD();
+    WriteCmdIntoBuff(CNMP, READ);
     EndCMD();
     return SendCMD();
 }

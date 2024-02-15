@@ -130,19 +130,19 @@ void Gsm::Initialize(bool flag)
     count = 0;
     while (!VBATCheckingFeature(true, WRITE))
     {
-        ESP_LOGI(TAG, "Sending get local timestamp command...");
+        ESP_LOGI(TAG, "Sending VBAT checking feature command...");
         if (count == ERROR_FLAG_MAX)
         {
             this->gsm_error = true;
             this->mqtt_error = true;
             this->gps_error = true;
-            ESP_LOGE(TAG, "\n\nGet time stamp cmd error!");
+            ESP_LOGE(TAG, "\n\nVBAT checking feature error!");
             return;
         }
         count++;
         vTaskDelay(DELAY_ERROR_MSG);
     }
-    ESP_LOGI(TAG, "Get local time stamp mode.\n");
+    ESP_LOGI(TAG, "VBAT checking feature.\n");
 
     this->gsm_error = false;
     this->mqtt_error = false;
@@ -152,22 +152,14 @@ void Gsm::Initialize(bool flag)
         return;
     if (!MQTTInit())
         return;
-    if (!GNSSInit())
-        return;
+    // if (!GNSSInit())
+    //     return;
     // GPRSInit();
 }
 
 bool Gsm::PDNManualActivation()
 {
     uint8_t error_cont = 0;
-
-    ESP_LOGI(TAG, "Sending GPRS attachment command...");
-    while (!GPRSAttachment(true))
-    {
-        ESP_LOGI(TAG, "Sending GPRS attachment command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-    ESP_LOGI(TAG, "GPRS attached.\n");
 
     // Disable RF
     ESP_LOGI(TAG, "writing set phone functionality command...");
@@ -192,14 +184,6 @@ bool Gsm::PDNManualActivation()
     }
     ESP_LOGI(TAG, "Set PDP context.\n");
     this->ErrorFlagReset(&(this->gsm_error), &error_cont);
-
-    ESP_LOGI(TAG, "Sending GPRS attachment command...");
-    while (!GPRSAttachment(true))
-    {
-        ESP_LOGI(TAG, "Sending GPRS attachment command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-    ESP_LOGI(TAG, "GPRS attached.\n");
 
     /*
         // Check PS service. 1 indicates PS has attached.
@@ -429,17 +413,6 @@ bool Gsm::MQTTInit()
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
-    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
-
-    ESP_LOGI(TAG, "Establishing connection...");
-    while (!OpenTCPconnection(cid, pdp, conn_type, broker_url, broker_port))
-    {
-        ESP_LOGI(TAG, "Establishing connection...");
-        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
-            return false;
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-    ESP_LOGI(TAG, "Connected.\n");
     this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
     while (!MQTTConnect())

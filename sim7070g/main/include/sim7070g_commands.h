@@ -66,6 +66,7 @@ using namespace std;
 #define CPSMS "+CPSMS"       // Power saving mode setting
 #define CLTS "+CLTS"         // Get local timestamp
 #define CBATCHK "+CBATCHK"   // Set VBAT checking feature ON/OFF
+#define CNMP "+CNMP"         // Preferred mode selection
 
 // TCP/UDP
 #define CACFG "+CACFG"   // configure transparent transmission parameters
@@ -104,6 +105,14 @@ using namespace std;
 #define RESP_DEACTIVE "DEACTIVE"
 
 #define MQTT_PUB_TIMER 15000 // ms
+
+enum Connection_mode_enum
+{
+    AUTO = 2,
+    GSM_ONLY = 13,
+    LTE_ONLY = 38,
+    GSM_AND_LTE = 51
+};
 
 enum Thread_action_enum
 {
@@ -612,6 +621,21 @@ bool GetLocalTimeStamp(bool mode);
  * @return : true if successful, false otherwise
  */
 bool VBATCheckingFeature(bool mode, CMD_action_enum action);
+
+/**
+ * Set preferred mode
+ * @author Eduardo Veiga
+ * @param mode : Connection_mode_enum
+ * @return true if successful, false otherwise
+ */
+bool SetPreferredMode(Connection_mode_enum mode);
+
+/**
+ * Get preferred mode
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetPreferredMode();
 
 /**
  * Send packet through MQTT
