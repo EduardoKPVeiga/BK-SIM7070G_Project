@@ -123,3 +123,19 @@ char *DecimalToCharArray(uint16_t decimal)
     char *decimal_array = strrev((char *)decimal_s.c_str());
     return decimal_array;
 }
+
+char *BintoCharArray(uint8_t bin)
+{
+    uint8_t bin_aux = bin;
+    string bin_s = "";
+    for (int i = 0; i < 8; i++)
+    {
+        if (bin_aux & 0b00000001)
+            bin_s += '1';
+        else
+            bin_s += '0';
+        bin_aux >>= 1;
+    }
+    char *bin_array = strrev((char *)bin_s.c_str());
+    return bin_array;
+}

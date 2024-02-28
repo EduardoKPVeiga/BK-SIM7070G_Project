@@ -26,6 +26,8 @@ extern uint16_t msg_received_size;
 extern uint16_t begin_msg_received;
 extern uint16_t end_msg_received;
 extern bool received;
+extern bool enter_psm;
+extern bool waiting_psm;
 extern bool mqtt_publish_flag;
 extern uint64_t time_last_msg;
 

@@ -39,7 +39,6 @@ using namespace std;
 
 // GPRS
 #define SNPING4 "+SNPING4" // Ping IPV4
-#define CGATT "+CGATT"     // Attach or detach from GPRS Service
 #define CGDCONT "+CGDCONT" // Define PDP context
 
 // GNSS
@@ -49,24 +48,31 @@ using namespace std;
 #define SGNSCMD "+SGNSCMD" // GNSS command
 
 // SIM cmds
-#define CNSMOD "+CNSMOD"     // Network system mode
-#define CGNAPN "+CGNAPN"     // Network APN
-#define CEREG "+CEREG"       // EPS network registration status
-#define CAOPEN "+CAOPEN"     // TCP/UDP connection
-#define CPIN "+CPIN"         // SIM card status
-#define CSQ "+CSQ"           // RF signal
-#define CGATT "+CGATT"       // Check PS service
-#define COPS "+COPS"         // Query information
-#define CNCFG "+CNCFG"       // PDP configure
-#define CBANDCFG "+CBANDCFG" // Test if the band is properly set
-#define CFUN "+CFUN"         // Set Phone Functionality
-#define CNBS "+CNBS"         // Band scan optimization
-#define CENG "+CENG"         // Engineering mode
-#define CSCLK "+CSCLK"       // Configure slow clock
-#define CPSMS "+CPSMS"       // Power saving mode setting
-#define CLTS "+CLTS"         // Get local timestamp
-#define CBATCHK "+CBATCHK"   // Set VBAT checking feature ON/OFF
-#define CNMP "+CNMP"         // Preferred mode selection
+#define CNSMOD "+CNSMOD"         // Network system mode
+#define CGNAPN "+CGNAPN"         // Network APN
+#define CEREG "+CEREG"           // EPS network registration status
+#define CREG "+CREG"             // CSD network registration status
+#define CGREG "+CGREG"           // GPRS network registration status
+#define CAOPEN "+CAOPEN"         // TCP/UDP connection
+#define CPIN "+CPIN"             // SIM card status
+#define CSQ "+CSQ"               // RF signal
+#define CGATT "+CGATT"           // Check PS service
+#define COPS "+COPS"             // Query information
+#define CNCFG "+CNCFG"           // PDP configure
+#define CBANDCFG "+CBANDCFG"     // Test if the band is properly set
+#define CFUN "+CFUN"             // Set Phone Functionality
+#define CNBS "+CNBS"             // Band scan optimization
+#define CENG "+CENG"             // Engineering mode
+#define CSCLK "+CSCLK"           // Configure slow clock
+#define CPSMS "+CPSMS"           // Power saving mode setting
+#define CLTS "+CLTS"             // Get local timestamp
+#define CBATCHK "+CBATCHK"       // Set VBAT checking feature ON/OFF
+#define CNMP "+CNMP"             // Preferred mode selection
+#define CREBOOT "+CREBOOT"       // Reboot module
+#define CPSMSTATUS "+CPSMSTATUS" // Enable deep sleep wakeup indication
+#define CPSMRDP "+CPSMRDP"       // Read PSM Dynamic Parameters
+#define CPSMCFGEXT "+CPSMCFGEXT" // Configure modem optimization of PSM
+#define CPSMCFG "+CPSMCFG"       // Configure minimum threshold value
 
 // TCP/UDP
 #define CACFG "+CACFG"   // configure transparent transmission parameters
@@ -103,8 +109,34 @@ using namespace std;
 #define RESP_OK "OK"
 #define RESP_ERROR "ERROR"
 #define RESP_DEACTIVE "DEACTIVE"
+#define ENTER_PSM "ENTER PSM"
+#define EXIT_PSM "EXIT PSM"
 
-#define MQTT_PUB_TIMER 15000 // ms
+/**
+ * PSM_WAKE_UP_TIMER_UNIT for SIM7070, SIM7080 and SIM7090 series
+ *
+ * 0 -> 10min
+ * 1 -> 1h
+ * 2 -> 10h
+ * 3 -> 2sec
+ * 4 -> 30sec
+ * 5 -> 1min
+ * 6 -> 320h
+ */
+#define PSM_WAKE_UP_TIMER_UNIT 0b00000100 // (0, 1, ... , 6)
+#define PSM_WAKE_UP_TIMER_MULT 0b00000011
+#define PSM_WAKE_UP_TIMER (uint16_t)((uint8_t)(PSM_WAKE_UP_TIMER_UNIT << 5) + PSM_WAKE_UP_TIMER_MULT)
+
+/**
+ * REQ_PERIODIC_TAU, requested periodic TAU for SIM7070, SIM7080 and SIM7090 series
+ *
+ * 0 -> 2sec
+ * 1 -> 1min
+ * 2 -> 6min
+ */
+#define REQ_PERIODIC_TAU_UNIT 0b00000000 // (0, 1, ... , 6)
+#define REQ_PERIODIC_TAU_MULT 0b00001111
+#define REQ_PERIODIC_TAU (uint16_t)((uint8_t)(REQ_PERIODIC_TAU_UNIT << 5) + REQ_PERIODIC_TAU_MULT)
 
 enum Connection_mode_enum
 {
@@ -192,6 +224,13 @@ void BeginCMD();
  * @return void
  */
 void EndCMD();
+
+/**
+ * Add a number
+ * @author Eduardo Veiga
+ * @return void
+ */
+void WriteNumberIntoBuff(uint32_t num);
 
 /**
  * Put quotations marks in the message
@@ -395,22 +434,6 @@ bool SetPassword(const char *pass);
 bool EchoBackOff();
 
 /**
- * Sends a ping message to another destination
- * @author Eduardo Veiga
- * @param ipaddress: const char
- * @return true if successful, false otherwise
- */
-bool PingIPV4(const char *ipaddress, const char *count = "1", const char *size = "16", const char *timeout = "10000");
-
-/**
- * GPRS attachment command
- * @author Eduardo Veiga
- * @param active : bool (0 means detached and 1 means attached)
- * @return true if successful, false otherwise
- */
-bool GPRSAttachment(bool active);
-
-/**
  * Define PDP context
  * @author Eduardo Veiga
  * @param cid : const char (1..15)
@@ -487,10 +510,24 @@ bool GetEPSNetworkStatus();
 /**
  * Set EPS network registration status
  * @author Eduardo Veiga
- * @param n : char ('0', '1', '2', '3', '4')
+ * @param n : int (0, 1, ... , 4)
  * @return true if successful, false otherwise
  */
-bool SetEPSNetworkStatus(char n);
+bool SetEPSNetworkStatus(int n);
+
+/**
+ * CSD network registration status
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetCSDNetworkStatus();
+
+/**
+ * GPRS network registration status
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetGPRSNetworkStatus();
 
 /**
  * TCP/UDP connection status
@@ -636,6 +673,55 @@ bool SetPreferredMode(Connection_mode_enum mode);
  * @return true if successful, false otherwise
  */
 bool GetPreferredMode();
+
+/**
+ * Reboot module
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool Reboot();
+
+/**
+ * Enable deep sleep wake up indication
+ * @author Eduardo Veiga
+ * @param enable : bool
+ * @return true is successful, false otherwise
+ */
+bool WakeUpIndication(bool enable);
+
+/**
+ * Read PSM dynamic parameters
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool PSMParameters();
+
+/**
+ * Configure modem optimization for PSM
+ * @author Eduardo Veiga
+ * @param psm_opt_mask : uint8_t (0, 1, ... , 15), default = 10
+ * @param max_oos_full_s : uint8_t (0 , 1, ... , 100), default = 2
+ * @param psm_duration_due_to_oos : uint32_t (120, 121, ... , 4294967295), default = 120
+ * @param psm_randomization_window : uint16_t (1, 2, ... , 1000), default = 5
+ * @param max_oos_time : uint16_t, default = 10
+ * @param early_wakeup_time : uint16_t (1, 2, ... , 1000), default = 3
+ */
+bool ConfigurePSM(uint8_t psm_opt_mask = 10, uint8_t max_oos_full_s = 2, uint32_t psm_duration_due_to_oos = 120, uint16_t psm_randomization_window = 5, uint16_t max_oos_time = 10, uint16_t early_wakeup_time = 3);
+
+/**
+ * Configure minimum threshold value
+ * @author Eduardo Veiga
+ * @param threshold : uint32_t (20 to 86400)
+ * @return true if successful, false otherwise
+ */
+bool SetThreshold(uint32_t threshold);
+
+/**
+ * Get minimum threshold value
+ * @author Eduardo Veiga
+ * @return true if successful, false otherwise
+ */
+bool GetThreshold();
 
 /**
  * Send packet through MQTT

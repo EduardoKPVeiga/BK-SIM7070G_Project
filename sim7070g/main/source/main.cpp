@@ -30,27 +30,9 @@ extern "C"
         if (gsm == nullptr)
             ESP_LOGE(TAG, "\n\n\n\ngsm NULL.");
 
-        // int psm = gsm->GetPSWMode();
-        // if (psm != -1)
-        // {
-        //     ESP_LOGI(TAG, "writing set power saving mode command...");
-        //     while (!SetPowerSavingMode(!((bool)psm)))
-        //     {
-        //         ESP_LOGI(TAG, "writing set power saving mode command...");
-        //         vTaskDelay(DELAY_ERROR_MSG);
-        //     }
-        //     ESP_LOGI(TAG, "Set power saving mode.");
-        //     gsm->GetPSWMode();
-        // }
-
-        //*
+        /*
         while (1)
         {
-            ESP_LOGI(TAG, "writing MQTT msg command...");
-            // ESP_LOGI(TAG, "Network active: %d", AppNetworkActiveReadCMD(0));
-            gsm->mqtt_publish(msg, (size_t)strlen((const char *)msg), 0);
-            vTaskDelay(50 * DELAY_ERROR_MSG);
-
             // GPS test
             // ESP_LOGI(TAG, "writing get GSM location...");
             // if (gsm->GetLocation())

@@ -8,6 +8,8 @@ uint16_t msg_received_size = 0;
 uint16_t begin_msg_received = 0;
 uint16_t end_msg_received = 0;
 bool received = false;
+bool enter_psm = false;
+bool waiting_psm = false;
 bool mqtt_publish_flag = false;
 
 static const char *TAG = "Uart";
@@ -153,9 +155,7 @@ void uart2_task(void *pvParameters)
                 old_begin = begin_msg_received;
                 begin_msg_received = end_msg_received;
                 if (end_msg_received + event.size <= MSG_RECEIVED_BUFF_SIZE)
-                {
                     end_msg_received += event.size;
-                }
                 else
                 {
                     begin_msg_received = 0;
@@ -175,25 +175,43 @@ void uart2_task(void *pvParameters)
                 }
                 if (!StrContainsChar(&(msg_received[begin_msg_received]), '>', msg_received_size))
                 {
-                    if (StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_OK, msg_received_size, SIZE(RESP_OK)) < 0 && StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)) < 0)
+                    if ((StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_OK, msg_received_size, SIZE(RESP_OK)) < 0 && StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)) < 0) || waiting_psm)
                     {
+                        ESP_LOGW(TAG, "wating: %d", waiting_psm);
                         big_receive = true;
                         received = false;
                     }
-                    else
+                    else if (big_receive)
                     {
-                        if (big_receive)
+                        begin_msg_received = old_begin;
+                        msg_received_size = end_msg_received - begin_msg_received;
+                        if (waiting_psm)
                         {
-                            begin_msg_received = old_begin;
-                            msg_received_size = end_msg_received - begin_msg_received;
+                            ESP_LOGW(TAG, "Waiting PSM");
+                            if (StrContainsSubstr(&(msg_received[begin_msg_received]), CPSMSTATUS, msg_received_size, SIZE(CPSMSTATUS)) >= 0)
+                            {
+                                ESP_LOGI(TAG, "CPSMSTATUS");
+                                if (StrContainsSubstr(&(msg_received[begin_msg_received]), ENTER_PSM, msg_received_size, SIZE(ENTER_PSM)) >= 0)
+                                {
+                                    enter_psm = true;
+                                    waiting_psm = false;
+                                }
+                                else if (StrContainsSubstr(&(msg_received[begin_msg_received]), EXIT_PSM, msg_received_size, SIZE(EXIT_PSM)) >= 0)
+                                {
+                                    enter_psm = false;
+                                    waiting_psm = false;
+                                }
+                                ESP_LOGI(TAG, "%s", &(msg_received[begin_msg_received]));
+                            }
+                        }
+                        else
+                        {
                             big_receive = false;
                         }
                     }
                 }
                 else
-                {
                     mqtt_publish_flag = true;
-                }
                 break;
 
             case UART_FIFO_OVF:

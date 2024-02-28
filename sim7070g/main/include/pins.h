@@ -15,8 +15,9 @@
 
 #define PWRKEY_T_ON 1000 / portTICK_PERIOD_MS      // ms
 #define PWRKEY_T_ON_UART 3000 / portTICK_PERIOD_MS // ms
-#define PWRKEY_T_OFF 1200 / portTICK_PERIOD_MS     // ms
-#define PWRKEY_T_OFF_VDD 1200 / portTICK_PERIOD_MS // ms
+#define PWRKEY_T_OFF 1400 / portTICK_PERIOD_MS     // ms
+#define PWRKEY_T_OFF_ON 2200 / portTICK_PERIOD_MS  // ms
+#define PWRKEY_T_OFF_VDD 2000 / portTICK_PERIOD_MS // ms
 
 /**
  * Setup pins used
@@ -38,5 +39,12 @@ void PWRKEYPulse();
  * @return void
  */
 void PWRKEYToGnd();
+
+/**
+ * Power off
+ * @author Eduardo Veiga
+ * @return void
+ */
+void PWRKEYPowerOff();
 
 #endif

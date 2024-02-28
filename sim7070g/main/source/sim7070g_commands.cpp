@@ -29,6 +29,11 @@ void EndCMD()
     }
 }
 
+void WriteNumberIntoBuff(uint32_t num)
+{
+    WriteCharArrayIntoBuff(DecimalToCharArray(num));
+}
+
 void QuotationMarks()
 {
     message_buff[message_pointer_pos] = '"';
@@ -101,8 +106,7 @@ bool SetMqttThreadSleepTime(Thread_action_enum action, uint16_t time)
 {
     BeginCMD();
     WriteCmdIntoBuff(SMRCVSLPTM, WRITE);
-    message_buff[message_pointer_pos] = (uint8_t)action + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)action);
     ValueDelimiter();
     WriteCharArrayIntoBuff(DecimalToCharArray(time));
     EndCMD();
@@ -268,8 +272,7 @@ bool SetQOS(Qos_enum level)
     WriteCmdIntoBuff(SMCONF, WRITE);
     WriteStrIntoBuff(QOS);
     ValueDelimiter();
-    message_buff[message_pointer_pos] = (uint8_t)level + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)level);
     EndCMD();
     return SendCMD();
 }
@@ -281,7 +284,7 @@ bool SetKeeptime(uint16_t keeptime)
     WriteCmdIntoBuff(SMCONF, WRITE);
     WriteStrIntoBuff(KEEPTIME);
     ValueDelimiter();
-    WriteCharArrayIntoBuff(DecimalToCharArray(keeptime));
+    WriteNumberIntoBuff(keeptime);
     EndCMD();
     return SendCMD();
 }
@@ -292,8 +295,7 @@ bool SetCleanss(bool cleanss)
     WriteCmdIntoBuff(SMCONF, WRITE);
     WriteStrIntoBuff(CLEANSS);
     ValueDelimiter();
-    message_buff[message_pointer_pos] = (uint8_t)cleanss + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)cleanss);
     EndCMD();
     return SendCMD();
 }
@@ -333,11 +335,9 @@ bool SendPacket(const char *topic, const char *length, Qos_enum qos, bool retain
         message_pointer_pos++;
     }
     ValueDelimiter();
-    message_buff[message_pointer_pos] = (uint8_t)qos + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)qos);
     ValueDelimiter();
-    message_buff[message_pointer_pos] = retain ? '1' : '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)retain);
     EndCMD();
     ESP_LOGI(TAG, "writing send packet command...");
     if (SendCMD())
@@ -382,8 +382,7 @@ bool SubscribePacket(const char *topic, Qos_enum qos)
     WriteCmdIntoBuff(SMSUB, WRITE);
     WriteStrIntoBuff(topic);
     ValueDelimiter();
-    message_buff[message_pointer_pos] = (uint8_t)qos + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)qos);
     EndCMD();
     return SendCMD();
 }
@@ -409,31 +408,6 @@ bool EchoBackOff()
 }
 
 // GPRS ----------------------------------------------------------------------------------
-bool PingIPV4(const char *ipaddress, const char *count, const char *size, const char *timeout)
-{
-    // AT+SNPING4=<URL>,<count>,<size>,<timeout>
-    BeginCMD();
-    WriteCmdIntoBuff(SNPING4, WRITE);
-    WriteStrIntoBuff(ipaddress);
-    ValueDelimiter();
-    WriteStrIntoBuff(count);
-    ValueDelimiter();
-    WriteStrIntoBuff(size);
-    ValueDelimiter();
-    WriteStrIntoBuff(timeout);
-    EndCMD();
-    return SendCMD();
-}
-
-bool GPRSAttachment(bool active)
-{
-    BeginCMD();
-    WriteCmdIntoBuff(CGATT, WRITE);
-    message_buff[message_pointer_pos] = active ? '1' : '0';
-    message_pointer_pos++;
-    EndCMD();
-    return SendCMD(75);
-}
 
 bool PDPContext(const char cid, const char *pdp_type, const char *apn)
 {
@@ -472,8 +446,7 @@ bool SetGNSSPowerMode(bool state)
 {
     BeginCMD();
     WriteCmdIntoBuff(CGNSPWR, WRITE);
-    message_buff[message_pointer_pos] = (uint8_t)state + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)state);
     EndCMD();
     return SendCMD();
 }
@@ -482,20 +455,15 @@ bool SetGNSSWorkMode(bool gps_mode, bool plo_mode, bool bd_mode, bool gal_mode, 
 {
     BeginCMD();
     WriteCmdIntoBuff(CGNSMOD, WRITE);
-    message_buff[message_pointer_pos] = (uint8_t)gps_mode + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)gps_mode);
     ValueDelimiter();
-    message_buff[message_pointer_pos] = (uint8_t)plo_mode + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)plo_mode);
     ValueDelimiter();
-    message_buff[message_pointer_pos] = (uint8_t)bd_mode + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)bd_mode);
     ValueDelimiter();
-    message_buff[message_pointer_pos] = (uint8_t)gal_mode + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)gal_mode);
     ValueDelimiter();
-    message_buff[message_pointer_pos] = (uint8_t)qzss_mode + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)qzss_mode);
     EndCMD();
     return SendCMD();
 }
@@ -504,8 +472,7 @@ bool SetHighAccuracyGNSSMode(const char *minInterval, const char *minDistance)
 {
     BeginCMD();
     WriteCmdIntoBuff(SGNSCMD, WRITE);
-    message_buff[message_pointer_pos] = '2';
-    message_pointer_pos++;
+    WriteNumberIntoBuff(2);
     ValueDelimiter();
     for (int i = 0; i < strlen(minInterval); i++)
     {
@@ -519,8 +486,7 @@ bool SetHighAccuracyGNSSMode(const char *minInterval, const char *minDistance)
         message_pointer_pos++;
     }
     ValueDelimiter();
-    message_buff[message_pointer_pos] = '3';
-    message_pointer_pos++;
+    WriteNumberIntoBuff(3);
     EndCMD();
     return SendCMD();
 }
@@ -554,13 +520,30 @@ bool GetEPSNetworkStatus()
     return SendCMD();
 }
 
-bool SetEPSNetworkStatus(char n)
+bool SetEPSNetworkStatus(int n)
 {
     // AT+CEREG=<n>
     BeginCMD();
     WriteCmdIntoBuff(CEREG, WRITE);
-    message_buff[message_pointer_pos] = n;
-    message_pointer_pos++;
+    WriteNumberIntoBuff(n);
+    EndCMD();
+    return SendCMD();
+}
+
+bool GetCSDNetworkStatus()
+{
+    // AT+CREG?
+    BeginCMD();
+    WriteCmdIntoBuff(CREG, READ);
+    EndCMD();
+    return SendCMD();
+}
+
+bool GetGPRSNetworkStatus()
+{
+    // AT+CGREG?
+    BeginCMD();
+    WriteCmdIntoBuff(CGREG, READ);
     EndCMD();
     return SendCMD();
 }
@@ -621,8 +604,7 @@ bool PDPConfigure(int pdpidx, const char ip_type, const char *apn, const char *u
     // AT+CNCFG=0,1,"ctnb"
     BeginCMD();
     WriteCmdIntoBuff(CNCFG, WRITE);
-    message_buff[message_pointer_pos] = (uint8_t)pdpidx + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff(0);
     ValueDelimiter();
     message_buff[message_pointer_pos] = ip_type;
     message_pointer_pos++;
@@ -633,8 +615,7 @@ bool PDPConfigure(int pdpidx, const char ip_type, const char *apn, const char *u
     ValueDelimiter();
     WriteStrIntoBuff(password);
     ValueDelimiter();
-    message_buff[message_pointer_pos] = '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff(0);
     EndCMD();
     return SendCMD();
 }
@@ -662,8 +643,7 @@ bool SetNetworkType(Network_select_enum mode)
     // AT+CMNB=<mode>
     BeginCMD();
     WriteCmdIntoBuff(CMNB, READ);
-    message_buff[message_pointer_pos] = (uint8_t)mode + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)mode);
     EndCMD();
     return SendCMD();
 }
@@ -690,10 +670,9 @@ bool SetSlowClockMode(bool mode)
 {
     BeginCMD();
     WriteCmdIntoBuff(CSCLK, WRITE);
-    message_buff[message_pointer_pos] = (uint8_t)mode + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)mode);
     EndCMD();
-    return SendCMD();
+    return SendCMD(60);
 }
 
 bool GetSlowClockMode()
@@ -708,10 +687,22 @@ bool SetPowerSavingMode(bool mode)
 {
     BeginCMD();
     WriteCmdIntoBuff(CPSMS, WRITE);
-    message_buff[message_pointer_pos] = (uint8_t)mode + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)mode);
+    if (mode)
+    {
+        ValueDelimiter();
+        ValueDelimiter();
+        ValueDelimiter();
+        QuotationMarks();
+        WriteCharArrayIntoBuff(BintoCharArray(PSM_WAKE_UP_TIMER));
+        QuotationMarks();
+        ValueDelimiter();
+        QuotationMarks();
+        WriteCharArrayIntoBuff(BintoCharArray(REQ_PERIODIC_TAU));
+        QuotationMarks();
+    }
     EndCMD();
-    return SendCMD();
+    return SendCMD(60);
 }
 
 bool GetPowerSavingMode()
@@ -726,8 +717,7 @@ bool GetLocalTimeStamp(bool mode)
 {
     BeginCMD();
     WriteCmdIntoBuff(CLTS, WRITE);
-    message_buff[message_pointer_pos] = mode ? '1' : '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)mode);
     EndCMD();
     return SendCMD();
 }
@@ -739,10 +729,7 @@ bool VBATCheckingFeature(bool mode, CMD_action_enum action)
     BeginCMD();
     WriteCmdIntoBuff(CBATCHK, action);
     if (action == WRITE)
-    {
-        message_buff[message_pointer_pos] = mode ? '1' : '0';
-        message_pointer_pos++;
-    }
+        WriteNumberIntoBuff((uint8_t)mode);
     EndCMD();
     return SendCMD();
 }
@@ -751,8 +738,7 @@ bool SetPreferredMode(Connection_mode_enum mode)
 {
     BeginCMD();
     WriteCmdIntoBuff(CNMP, WRITE);
-    message_buff[message_pointer_pos] = (uint8_t)mode + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)mode);
     EndCMD();
     return SendCMD();
 }
@@ -764,6 +750,71 @@ bool GetPreferredMode()
     EndCMD();
     return SendCMD();
 }
+
+bool Reboot()
+{
+    BeginCMD();
+    WriteCmdIntoBuff(CREBOOT, EXE);
+    EndCMD();
+    return SendCMD();
+}
+
+bool WakeUpIndication(bool enable)
+{
+    // AT+CPSMSTATUS=<enable>
+    BeginCMD();
+    WriteCmdIntoBuff(CPSMSTATUS, WRITE);
+    WriteNumberIntoBuff((uint8_t)enable);
+    EndCMD();
+    return SendCMD();
+}
+
+bool PSMParameters()
+{
+    // AT+CPSMRDP
+    BeginCMD();
+    WriteCmdIntoBuff(CPSMRDP, EXE);
+    EndCMD();
+    return SendCMD();
+}
+
+bool ConfigurePSM(uint8_t psm_opt_mask, uint8_t max_oos_full_s, uint32_t psm_duration_due_to_oos, uint16_t psm_randomization_window, uint16_t max_oos_time, uint16_t early_wakeup_time)
+{
+    BeginCMD();
+    WriteCmdIntoBuff(CPSMCFGEXT, WRITE);
+    WriteNumberIntoBuff(psm_opt_mask);
+    ValueDelimiter();
+    WriteNumberIntoBuff(max_oos_full_s);
+    ValueDelimiter();
+    WriteNumberIntoBuff(psm_duration_due_to_oos);
+    ValueDelimiter();
+    WriteNumberIntoBuff(psm_randomization_window);
+    ValueDelimiter();
+    WriteNumberIntoBuff(max_oos_time);
+    ValueDelimiter();
+    WriteNumberIntoBuff(early_wakeup_time);
+    EndCMD();
+    return SendCMD();
+}
+
+bool SetThreshold(uint32_t threshold)
+{
+    // AT+CPSMCFG=<threshold>
+    BeginCMD();
+    WriteCmdIntoBuff(CPSMCFG, WRITE);
+    WriteNumberIntoBuff(threshold);
+    EndCMD();
+    return SendCMD(10);
+}
+
+bool GetThreshold()
+{
+    // AT+CPSMCFG?
+    BeginCMD();
+    WriteCmdIntoBuff(CPSMCFG, READ);
+    EndCMD();
+    return SendCMD(5);
+}
 // ---------------------------------------------------------------------------------------
 
 //  TCP/UDP app --------------------------------------------------------------------------
@@ -773,14 +824,13 @@ bool SetKeepaliveTCPUDP(bool kpalive_enable, int kpalive_idle, int kpalive_intva
     WriteCmdIntoBuff(CACFG, WRITE);
     WriteStrIntoBuff(KEEPALIVE);
     ValueDelimiter();
-    message_buff[message_pointer_pos] = (char)((uint8_t)kpalive_enable + '0');
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)kpalive_enable);
     ValueDelimiter();
-    WriteCharArrayIntoBuff(DecimalToCharArray(kpalive_idle));
+    WriteNumberIntoBuff(kpalive_idle);
     ValueDelimiter();
-    WriteCharArrayIntoBuff(DecimalToCharArray(kpalive_intval));
+    WriteNumberIntoBuff(kpalive_intval);
     ValueDelimiter();
-    WriteCharArrayIntoBuff(DecimalToCharArray(kpalive_cnt));
+    WriteNumberIntoBuff(kpalive_cnt);
     EndCMD();
     return SendCMD();
 }
@@ -798,9 +848,9 @@ bool OpenTCPconnection(int cid, int pdp_index, const char *conn_type, const char
     // AT+CAOPEN=<cid>,<pdp_index>,<conn_type>,<server>, <port>[,<recv_mode>]
     BeginCMD();
     WriteCmdIntoBuff(CAOPEN, WRITE);
-    WriteCharArrayIntoBuff(DecimalToCharArray((uint16_t)cid));
+    WriteNumberIntoBuff(cid);
     ValueDelimiter();
-    WriteCharArrayIntoBuff(DecimalToCharArray((uint16_t)pdp_index));
+    WriteNumberIntoBuff(pdp_index);
     ValueDelimiter();
     WriteStrIntoBuff(conn_type);
     ValueDelimiter();
@@ -829,11 +879,9 @@ bool APPNetworkActive(int pdpidx, Action_enum action)
     // AT+CNACT=<pdpidx>,<action>
     BeginCMD();
     WriteCmdIntoBuff(CNACT, WRITE);
-    message_buff[message_pointer_pos] = (uint8_t)pdpidx + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff(pdpidx);
     ValueDelimiter();
-    message_buff[message_pointer_pos] = (uint8_t)action + '0';
-    message_pointer_pos++;
+    WriteNumberIntoBuff((uint8_t)action);
     EndCMD();
     return SendCMD();
 }
@@ -870,10 +918,7 @@ bool SetPhoneFunc(Cfun_enum fun)
     // AT+CFUN=<fun>[,<rst>]
     BeginCMD();
     WriteCmdIntoBuff(CFUN, WRITE);
-
-    message_buff[message_pointer_pos] = (uint8_t)fun + '0';
-    message_pointer_pos++;
-
+    WriteNumberIntoBuff((uint8_t)fun);
     EndCMD();
     if (SendCMD(15))
     {

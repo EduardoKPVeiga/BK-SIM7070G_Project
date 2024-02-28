@@ -94,6 +94,23 @@ void Gsm::Initialize(bool flag)
     SendCMD(1);
 
     uint8_t count = 0;
+    while (!SetSlowClockMode(false))
+    {
+        ESP_LOGI(TAG, "Sending set slow clock command...");
+        if (count == ERROR_FLAG_MAX)
+        {
+            this->gsm_error = true;
+            this->mqtt_error = true;
+            this->gps_error = true;
+            ESP_LOGE(TAG, "\n\nSet slow clock error!");
+            return;
+        }
+        count++;
+        vTaskDelay(DELAY_ERROR_MSG);
+    }
+    ESP_LOGI(TAG, "Set slow clock.\n");
+
+    count = 0;
     while (!EchoBackOff())
     {
         ESP_LOGI(TAG, "Sending echo command...");
@@ -127,34 +144,35 @@ void Gsm::Initialize(bool flag)
     }
     ESP_LOGI(TAG, "Get local time stamp mode.\n");
 
+    if (!PDNManualActivation())
+        return;
+
+    this->PowerSavingMode(true);
+    /*
+    if (!MQTTInit())
+        return;
+
     count = 0;
-    while (!VBATCheckingFeature(true, WRITE))
+    while (!SetEPSNetworkStatus(4))
     {
-        ESP_LOGI(TAG, "Sending VBAT checking feature command...");
         if (count == ERROR_FLAG_MAX)
         {
             this->gsm_error = true;
             this->mqtt_error = true;
             this->gps_error = true;
-            ESP_LOGE(TAG, "\n\nVBAT checking feature error!");
+            ESP_LOGE(TAG, "\n\nSet checking feature error!");
             return;
         }
-        count++;
+        ESP_LOGI(TAG, "EPS network registration status.\n");
         vTaskDelay(DELAY_ERROR_MSG);
     }
-    ESP_LOGI(TAG, "VBAT checking feature.\n");
 
+    // if (!GNSSInit())
+    //     return;
+    //*/
     this->gsm_error = false;
     this->mqtt_error = false;
     this->gps_error = false;
-
-    if (!PDNManualActivation())
-        return;
-    if (!MQTTInit())
-        return;
-    // if (!GNSSInit())
-    //     return;
-    // GPRSInit();
 }
 
 bool Gsm::PDNManualActivation()
@@ -184,19 +202,6 @@ bool Gsm::PDNManualActivation()
     }
     ESP_LOGI(TAG, "Set PDP context.\n");
     this->ErrorFlagReset(&(this->gsm_error), &error_cont);
-
-    /*
-        // Check PS service. 1 indicates PS has attached.
-        ESP_LOGI(TAG, "writing check PS service command...");
-        while (!CheckPSService())
-        {
-            ESP_LOGI(TAG, "Sending check PS service command...");
-            if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
-                return false;
-            vTaskDelay(DELAY_ERROR_MSG);
-        }
-        this->ErrorFlagReset(&(this->gsm_error), &error_cont);
-    */
 
     // Query the APN delivered by the network after theCAT-M or NB-IOT network is successfullyregistered
     ESP_LOGI(TAG, "writing get nertwork APN command...");
@@ -280,6 +285,20 @@ bool Gsm::PDNManualActivation()
             return false;
     }
     this->ErrorFlagReset(&(this->gsm_error), &error_cont);
+
+    //*
+    // Check PS service. 1 indicates PS has attached.
+    ESP_LOGI(TAG, "writing check PS service command...");
+    while (!CheckPSService())
+    {
+        ESP_LOGI(TAG, "Sending check PS service command...");
+        if (this->ErrorFlagCount(&(this->gsm_error), &error_cont))
+            return false;
+        vTaskDelay(DELAY_ERROR_MSG);
+    }
+    this->ErrorFlagReset(&(this->gsm_error), &error_cont);
+    //*/
+
     return true;
 }
 
@@ -337,15 +356,17 @@ bool Gsm::MQTTInit()
     ESP_LOGI(TAG, "Set broker URL.\n");
     this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
 
-    while (!MQTTSubscribeTopic(mqtt_topic))
-    {
-        ESP_LOGI(TAG, "Subscrinbing MQTT topic...");
-        if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
-            return false;
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-    ESP_LOGI(TAG, "Topic subscribe.\n");
-    this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
+    /*
+        while (!MQTTSubscribeTopic(mqtt_topic))
+        {
+            ESP_LOGI(TAG, "Subscrinbing MQTT topic...");
+            if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
+                return false;
+            vTaskDelay(DELAY_ERROR_MSG);
+        }
+        ESP_LOGI(TAG, "Topic subscribe.\n");
+        this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
+    */
 
     while (!SetAsyncmode(async_mode))
     {
@@ -420,14 +441,14 @@ bool Gsm::MQTTInit()
         ESP_LOGI(TAG, "Connecting to broker...");
         if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
             return false;
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(10 * DELAY_ERROR_MSG);
     }
     connect_time = esp_timer_get_time();
     ESP_LOGI(TAG, "Connected to broker.\n");
     this->ErrorFlagReset(&(this->mqtt_error), &error_cont);
-    return true;
+    vTaskDelay(20 * DELAY_ERROR_MSG);
 
-    while (!SubscribePacket(mqtt_topic, qos_level))
+    while (!SubscribePacket("NrAAFfn/0/msg", QOS_0))
     {
         ESP_LOGI(TAG, "writing subscribe command...");
         if (this->ErrorFlagCount(&(this->mqtt_error), &error_cont))
@@ -474,39 +495,6 @@ bool Gsm::GNSSInit()
     return true;
 }
 
-void Gsm::GPRSInit()
-{
-    ESP_LOGI(TAG, "Sending PDP context command...");
-    while (!PDPContext(cid, pdp_type, apn_vivo))
-    {
-        ESP_LOGI(TAG, "Sending PDP context command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-    ESP_LOGI(TAG, "PDP context set.\n");
-
-    ESP_LOGI(TAG, "Sending get PDP context command...");
-    while (!GetPDPContext())
-    {
-        ESP_LOGI(TAG, "Sending get PDP context command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-
-    ESP_LOGI(TAG, "Sending GPRS attachment command...");
-    while (!GPRSAttachment(true))
-    {
-        ESP_LOGI(TAG, "Sending GPRS attachment command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-    ESP_LOGI(TAG, "GPRS attached.\n");
-
-    ESP_LOGI(TAG, "Sending check PS service command...");
-    while (!CheckPSService())
-    {
-        ESP_LOGI(TAG, "Sending check PS service command...");
-        vTaskDelay(DELAY_ERROR_MSG);
-    }
-}
-
 bool Gsm::ErrorFlagCount(bool *flag, uint8_t *count)
 {
     if (*count == ERROR_FLAG_MAX)
@@ -538,12 +526,13 @@ bool Gsm::mqtt_publish(char *topic, unsigned char *msg, size_t msg_length)
         else
             return false;
         status = this->get_mqtt_status();
-        if (status != ON)
-            return false;
+    }
+    if (status == ERROR)
+    {
+        ESP_LOGE(TAG, "Communication failed!");
+        return false;
     }
     ESP_LOGI(TAG, "Connected to the broker.");
-    if (status == ERROR)
-        return false;
     uint16_t size = (uint16_t)msg_length;
     uint8_t digit = 0;
     string length = "";
@@ -588,6 +577,78 @@ int Gsm::GetPSWMode()
     index += begin_msg_received + SIZE(CPSMS) + 2;
     ESP_LOGI(TAG, "PSM - msg_received[%d]: %c", index, msg_received[index]);
     return msg_received[index];
+}
+
+bool Gsm::PowerSavingMode(bool mode)
+{
+    if (mode)
+    {
+        if (!WakeUpIndication(true))
+        {
+            ESP_LOGI(TAG, "Set wake up indication failed!");
+            return false;
+        }
+        ESP_LOGI(TAG, "Wake up indication.\n");
+        vTaskDelay(DELAY_ERROR_MSG);
+
+        if (!SetEPSNetworkStatus(4))
+            ESP_LOGI(TAG, "Set EPS network registration status failed!");
+        vTaskDelay(DELAY_ERROR_MSG);
+
+        if (!GetEPSNetworkStatus())
+            ESP_LOGI(TAG, "Set EPS network registration status failed!");
+        vTaskDelay(DELAY_ERROR_MSG);
+
+        // ESP_LOGI(TAG, "Configuring power saving mode...");
+        // if (!ConfigurePSM(15))
+        // {
+        //     ESP_LOGE(TAG, "Configure power saving mode failed!");
+        //     return false;
+        // }
+
+        ESP_LOGI(TAG, "Slow clock mode...");
+        if (!SetSlowClockMode(true))
+        {
+            ESP_LOGE(TAG, "Set slow clock mode failed!");
+            return false;
+        }
+
+        ESP_LOGI(TAG, "Read PSM dynamic parameters...");
+        if (!PSMParameters())
+        {
+            ESP_LOGE(TAG, "Get PSM dynamic parameters failed!");
+            return false;
+        }
+
+        waiting_psm = true;
+        ESP_LOGI(TAG, "Activating power saving mode...");
+        if (SetPowerSavingMode(mode))
+        {
+            for (int i = 0; i < 60; i++)
+            {
+                if (enter_psm)
+                {
+                    ESP_LOGI(TAG, "SIM chip reboot...");
+                    return Reboot();
+                }
+                vTaskDelay(DELAY_MSG);
+            }
+        }
+        ESP_LOGE(TAG, "Power saving mode failed!");
+        return false;
+        // ESP_LOGI(TAG, "Reboot...");
+        //  return Reboot();
+    }
+    ESP_LOGI(TAG, "SIM chip waking up...");
+    PWRKEYPulse();
+    ESP_LOGI(TAG, "SetPowerSavingMode");
+    for (int i = 0; i < 4; i++)
+    {
+        if (SetSlowClockMode(false))
+            return SetPowerSavingMode(mode);
+        vTaskDelay(DELAY_MSG);
+    }
+    return false;
 }
 
 MQTT_status_enum Gsm::get_mqtt_status()

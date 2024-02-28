@@ -12,6 +12,7 @@
 #include "esp_log.h"
 
 #define DELAY_ERROR_MSG 100 / portTICK_PERIOD_MS
+#define DELAY_MSG 1000 / portTICK_PERIOD_MS
 #define ERROR_FLAG_MAX 6
 
 using namespace std;
@@ -40,7 +41,6 @@ private:
     bool PDNManualActivation();
     bool MQTTInit();
     bool GNSSInit();
-    void GPRSInit();
 
     bool ErrorFlagCount(bool *flag, uint8_t *count);
     void ErrorFlagReset(bool *flag, uint8_t *count);
@@ -63,6 +63,7 @@ public:
     bool mqtt_publish(unsigned char *msg, size_t msg_length, int slot);
     bool GetLocation();
     int GetPSWMode();
+    bool PowerSavingMode(bool mode);
 
     MQTT_status_enum get_mqtt_status();
 
