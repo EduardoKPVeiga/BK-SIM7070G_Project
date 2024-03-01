@@ -177,7 +177,6 @@ void uart2_task(void *pvParameters)
                 {
                     if ((StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_OK, msg_received_size, SIZE(RESP_OK)) < 0 && StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)) < 0) || waiting_psm)
                     {
-                        ESP_LOGW(TAG, "wating: %d", waiting_psm);
                         big_receive = true;
                         received = false;
                     }
@@ -187,10 +186,8 @@ void uart2_task(void *pvParameters)
                         msg_received_size = end_msg_received - begin_msg_received;
                         if (waiting_psm)
                         {
-                            ESP_LOGW(TAG, "Waiting PSM");
                             if (StrContainsSubstr(&(msg_received[begin_msg_received]), CPSMSTATUS, msg_received_size, SIZE(CPSMSTATUS)) >= 0)
                             {
-                                ESP_LOGI(TAG, "CPSMSTATUS");
                                 if (StrContainsSubstr(&(msg_received[begin_msg_received]), ENTER_PSM, msg_received_size, SIZE(ENTER_PSM)) >= 0)
                                 {
                                     enter_psm = true;
@@ -227,7 +224,7 @@ void uart2_task(void *pvParameters)
                 break;
 
             case UART_BREAK:
-                ESP_LOGI(TAG, "uart rx break");
+                // ESP_LOGI(TAG, "uart rx break");
                 break;
 
             case UART_PARITY_ERR:

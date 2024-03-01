@@ -13,6 +13,7 @@
 
 #define DELAY_ERROR_MSG 100 / portTICK_PERIOD_MS
 #define DELAY_MSG 1000 / portTICK_PERIOD_MS
+#define DELAY_SLEEP_MODE 100 / portTICK_PERIOD_MS
 #define ERROR_FLAG_MAX 6
 
 using namespace std;
@@ -36,14 +37,20 @@ private:
     bool mqtt_error;
     bool gps_error;
 
+    uint8_t gsm_error_cont;
+    uint8_t mqtt_error_cont;
+    uint8_t gps_error_cont;
+
     void Initialize(bool flag);
 
     bool PDNManualActivation();
     bool MQTTInit();
     bool GNSSInit();
 
-    bool ErrorFlagCount(bool *flag, uint8_t *count);
-    void ErrorFlagReset(bool *flag, uint8_t *count);
+    bool MQTTConfig();
+
+    bool ErrorFlagCount(bool *flag, uint8_t *cont);
+    void ErrorFlagReset(bool *flag, uint8_t *cont);
 
 public:
     Gsm();
@@ -59,11 +66,18 @@ public:
     bool GetMqttErrorFlag() { return this->mqtt_error; }
     bool GetGpsErrorFlag() { return this->gps_error; }
 
+    bool network_connect();
+    bool net_connected();
+
+    bool mqtt_connect();
+    bool mqtt_sub(char *topic);
     bool mqtt_publish(char *topic, unsigned char *msg, size_t msg_length);
     bool mqtt_publish(unsigned char *msg, size_t msg_length, int slot);
+
     bool GetLocation();
     int GetPSWMode();
     bool PowerSavingMode(bool mode);
+    bool SleepMode(bool mode);
 
     MQTT_status_enum get_mqtt_status();
 

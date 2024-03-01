@@ -30,6 +30,21 @@ extern "C"
         if (gsm == nullptr)
             ESP_LOGE(TAG, "\n\n\n\ngsm NULL.");
 
+        gsm->SleepMode(true);
+        for (int i = 0; i < 120; i += 10)
+        {
+            ESP_LOGI(TAG, "%d s", i);
+            vTaskDelay(DELAY_MSG * 10);
+        }
+        PWRKEYPulse();
+        gsm->SleepMode(false);
+        while (1)
+        {
+            // gsm->net_connected();
+            GetSlowClockMode();
+            vTaskDelay(10 * DELAY_MSG);
+        }
+
         /*
         while (1)
         {
