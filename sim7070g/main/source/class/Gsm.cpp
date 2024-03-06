@@ -16,7 +16,7 @@ const char *broker_url = "172.104.199.107";
 const char *broker_port = "1883";
 const char *mqtt_topic = "NrAAFfn/0";
 const char *username = "TmDev";
-const char *password = "Senha-mtw@";
+const char *password = "Senha-mtw";
 const char *client_id = "NrAAFfn";
 const char *details = "GPS data";
 const bool async_mode = true;
@@ -96,8 +96,8 @@ void Gsm::Initialize(bool flag)
     BeginCMD();
     SendCMD(1);
 
-    SetSlowClockMode(false);
-    // this->SleepMode(false);
+    // SetSlowClockMode(false);
+    //  this->SleepMode(false);
 
     uint8_t count = 0;
     while (!EchoBackOff())
@@ -133,11 +133,11 @@ void Gsm::Initialize(bool flag)
     }
     ESP_LOGI(TAG, "Get local time stamp mode.\n");
 
-    // if (!PDNManualActivation())
-    //     return;
+    if (!PDNManualActivation())
+        return;
 
     // this->PowerSavingMode(true);
-    /*
+    //*
     if (!MQTTInit())
         return;
 
@@ -279,8 +279,8 @@ bool Gsm::MQTTInit()
         this->ErrorFlagReset(&(this->mqtt_error), &(this->mqtt_error_cont));
 
         if (this->mqtt_connect())
-            if (this->mqtt_sub("NrAAFfn/0/msg"))
-                return true;
+            // if (this->mqtt_sub("NrAAFfn/0/msg"))
+            return true;
     }
     return false;
 }
@@ -676,19 +676,26 @@ bool Gsm::SleepMode(bool mode)
         vTaskDelay(DELAY_SLEEP_MODE);
         if (SetSlowClockMode(false))
         {
-            ESP_LOGI(TAG, "Sleep Mode: %d", mode);
-            return true;
+            if (SetPhoneFunc(MIN_FUNC))
+            {
+                ESP_LOGI(TAG, "Sleep Mode: %d", mode);
+                return true;
+            }
         }
     }
     else
     {
-        if (SetSlowClockMode(true))
+        if (SetPhoneFunc(MIN_FUNC))
         {
-            vTaskDelay(DELAY_SLEEP_MODE);
-            gpio_set_level(DTR, 0);
-            ESP_LOGI(TAG, "DTR pin pull up!");
-            ESP_LOGI(TAG, "Sleep Mode: %d", mode);
-            return true;
+            if (SetSlowClockMode(true))
+            {
+                vTaskDelay(DELAY_SLEEP_MODE);
+                gpio_set_level(DTR, 0);
+
+                ESP_LOGI(TAG, "DTR pin pull up!");
+                ESP_LOGI(TAG, "Sleep Mode: %d", mode);
+                return true;
+            }
         }
     }
     ESP_LOGE(TAG, "Sleep mode change to %d failed!", mode);

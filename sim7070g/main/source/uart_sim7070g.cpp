@@ -43,6 +43,8 @@ void UARTSim7070gInit()
     ESP_ERROR_CHECK(uart_param_config(uart_sim7070g, &uart_config));
 
     ESP_LOGI(TAG, "Uart 2 initialized.");
+
+    uart_flush_input(uart_sim7070g);
 }
 
 void Clean_msg_received()

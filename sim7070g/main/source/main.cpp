@@ -8,7 +8,7 @@ extern "C"
 {
     void app_main(void)
     {
-        esp_log_level_set("*", ESP_LOG_INFO);
+        esp_log_level_set("*", ESP_LOG_NONE);
         ESP_LOGI(TAG, "Application Init!");
 
         Gsm *gsm = new Gsm(client_id);
@@ -30,24 +30,33 @@ extern "C"
         if (gsm == nullptr)
             ESP_LOGE(TAG, "\n\n\n\ngsm NULL.");
 
-        gsm->SleepMode(true);
-        for (int i = 0; i < 120; i += 10)
-        {
-            ESP_LOGI(TAG, "%d s", i);
-            vTaskDelay(DELAY_MSG * 10);
-        }
-        PWRKEYPulse();
-        gsm->SleepMode(false);
-        while (1)
-        {
-            // gsm->net_connected();
-            GetSlowClockMode();
-            vTaskDelay(10 * DELAY_MSG);
-        }
+        vTaskDelay(10 * DELAY_MSG);
+        while (!gsm->mqtt_sub("NrAAFfn/0/msg"))
+            vTaskDelay(DELAY_MSG);
+
+        // gsm->SleepMode(true);
+        // for (int i = 0; i < 120; i += 10)
+        // {
+        //     ESP_LOGI(TAG, "%d s", i);
+        //     vTaskDelay(DELAY_MSG * 10);
+        // }
+        // PWRKEYPulse();
+        // while (!gsm->SleepMode(false))
+        //     vTaskDelay(DELAY_ERROR_MSG);
+        // while (1)
+        // {
+        //     gsm->net_connected();
+        //     // GetSlowClockMode();
+        //     vTaskDelay(10 * DELAY_MSG);
+        // }
 
         /*
         while (1)
         {
+            ESP_LOGI(TAG, "writing MQTT msg command...");
+            // ESP_LOGI(TAG, "Network active: %d", AppNetworkActiveReadCMD(0));
+            gsm->mqtt_publish(msg, (size_t)strlen((const char *)msg), 0);
+            vTaskDelay(50 * DELAY_ERROR_MSG);
             // GPS test
             // ESP_LOGI(TAG, "writing get GSM location...");
             // if (gsm->GetLocation())
