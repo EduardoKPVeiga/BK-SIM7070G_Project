@@ -10,4 +10,6 @@
 #include "uart_sim7070g.h"
 #include <stdlib.h>
 
+void app_routine();
+
 #endif

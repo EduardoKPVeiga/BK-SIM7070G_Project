@@ -131,13 +131,22 @@ bool MQTTDisconnect()
     return SendCMD();
 }
 
-bool MQTTStatus()
+int MQTTStatus()
 {
     // AT+SMSTATE?
     BeginCMD();
     WriteCmdIntoBuff(SMSTATE, READ);
     EndCMD();
-    return SendCMD();
+    if (SendCMD())
+    {
+        int size_sub_str = StrContainsSubstr(&(msg_received[begin_msg_received]), SMSTATE, msg_received_size, SIZE(SMSTATE));
+        if (size_sub_str >= 0)
+        {
+            int index = size_sub_str + begin_msg_received + 2 + SIZE(SMSTATE);
+            return (msg_received[index] == '1');
+        }
+    }
+    return -1;
 }
 
 bool MQTTSubscribeTopic(const char *topic)
@@ -511,6 +520,7 @@ bool GetNetworkAPN()
     return SendCMD();
 }
 
+#ifdef PSM
 bool GetEPSNetworkStatus()
 {
     // AT+CEREG?
@@ -529,6 +539,7 @@ bool SetEPSNetworkStatus(int n)
     EndCMD();
     return SendCMD();
 }
+#endif
 
 bool GetCSDNetworkStatus()
 {
@@ -675,14 +686,37 @@ bool SetSlowClockMode(bool mode)
     return SendCMD(60);
 }
 
-bool GetSlowClockMode()
+int GetSlowClockMode()
 {
+    // AT+CSCLK?
     BeginCMD();
     WriteCmdIntoBuff(CSCLK, READ);
     EndCMD();
-    return SendCMD();
+    if (SendCMD())
+    {
+        bool find = false;
+        int size_sub_str = -1;
+        int index = 0;
+        while (!find)
+        {
+            if (index + SIZE(CSCLK) > end_msg_received)
+                return -1;
+            size_sub_str = StrContainsSubstr(&(msg_received[begin_msg_received + index]), CSCLK, msg_received_size, SIZE(CSCLK));
+            if (size_sub_str >= 0)
+            {
+                index += size_sub_str + 2 + SIZE(CSCLK);
+                if (msg_received[begin_msg_received + index - 2] == ':')
+                    find = true;
+                else
+                    index -= 2;
+            }
+        }
+        return (msg_received[begin_msg_received + index] == '1');
+    }
+    return -1;
 }
 
+#ifdef PSM
 bool SetPowerSavingMode(bool mode)
 {
     BeginCMD();
@@ -712,6 +746,7 @@ bool GetPowerSavingMode()
     EndCMD();
     return SendCMD();
 }
+#endif
 
 bool GetLocalTimeStamp(bool mode)
 {
@@ -769,13 +804,34 @@ bool WakeUpIndication(bool enable)
     return SendCMD();
 }
 
-bool PSMParameters()
+int PSMParameters()
 {
     // AT+CPSMRDP
     BeginCMD();
     WriteCmdIntoBuff(CPSMRDP, EXE);
     EndCMD();
-    return SendCMD();
+    if (SendCMD())
+    {
+        bool find = false;
+        int size_sub_str = -1;
+        int index = 0;
+        while (!find)
+        {
+            if (index + SIZE(CPSMRDP) > end_msg_received)
+                return -1;
+            size_sub_str = StrContainsSubstr(&(msg_received[begin_msg_received + index]), CPSMRDP, msg_received_size, SIZE(CPSMRDP));
+            if (size_sub_str >= 0)
+            {
+                index += size_sub_str + 2 + SIZE(CPSMRDP);
+                if (msg_received[begin_msg_received + index - 2] == ':')
+                    find = true;
+                else
+                    index -= 2;
+            }
+        }
+        return (msg_received[begin_msg_received + index] == '1');
+    }
+    return -1;
 }
 
 bool ConfigurePSM(uint8_t psm_opt_mask, uint8_t max_oos_full_s, uint32_t psm_duration_due_to_oos, uint16_t psm_randomization_window, uint16_t max_oos_time, uint16_t early_wakeup_time)

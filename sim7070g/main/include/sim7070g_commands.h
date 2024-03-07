@@ -318,9 +318,9 @@ bool MQTTDisconnect();
 /**
  * Inquire MQTT connection status
  * @author Eduardo Veiga
- * @return true if successful, false otherwise
+ * @return -1 if message was not send, 0 if is disconnected and 1 if connected
  */
-bool MQTTStatus();
+int MQTTStatus();
 
 /*
  * Subscribe to MQTT broker topic
@@ -623,10 +623,11 @@ bool SetSlowClockMode(bool mode);
 /**
  * Get slow clock mode
  * @author Eduardo Veiga
- * @return true if successful, false otherwise
+ * @return -1 if cmd failed, 0 if slow clock is disabled and 1 if it is enabled
  */
-bool GetSlowClockMode();
+int GetSlowClockMode();
 
+#ifdef PSM
 /**
  * Set power saving mode setting
  * @author Eduardo Veiga
@@ -641,6 +642,7 @@ bool SetPowerSavingMode(bool mode);
  * @return true if successful, false otherwise
  */
 bool GetPowerSavingMode();
+#endif
 
 /**
  * Get local time stamp
@@ -692,9 +694,9 @@ bool WakeUpIndication(bool enable);
 /**
  * Read PSM dynamic parameters
  * @author Eduardo Veiga
- * @return true if successful, false otherwise
+ * @return -1 if cmd failed, 0 if psm is disabled and 1 if psm is enabled
  */
-bool PSMParameters();
+int PSMParameters();
 
 /**
  * Configure modem optimization for PSM

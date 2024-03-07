@@ -11,7 +11,7 @@
 #define RTS1 GPIO_NUM_14
 #define SS5 GPIO_NUM_0
 #define PWRKEY GPIO_NUM_22
-#define DTR GPIO_NUM_26
+// #define DTR GPIO_NUM_26
 
 #define PWRKEY_T_ON 1000 / portTICK_PERIOD_MS      // ms
 #define PWRKEY_T_ON_UART 3000 / portTICK_PERIOD_MS // ms

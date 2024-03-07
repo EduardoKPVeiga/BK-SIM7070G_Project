@@ -30,6 +30,7 @@ extern bool enter_psm;
 extern bool waiting_psm;
 extern bool mqtt_publish_flag;
 extern uint64_t time_last_msg;
+extern TaskHandle_t tunnelTaskHandle;
 
 /**
  * Initialize UART

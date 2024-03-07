@@ -69,17 +69,25 @@ public:
     bool network_connect();
     bool net_connected();
 
+    int mqtt_connected();
     bool mqtt_connect();
     bool mqtt_sub(char *topic);
     bool mqtt_publish(char *topic, unsigned char *msg, size_t msg_length);
     bool mqtt_publish(unsigned char *msg, size_t msg_length, int slot);
 
     bool GetLocation();
+
+#ifdef PSM
     int GetPSWMode();
     bool PowerSavingMode(bool mode);
+#endif
+#ifdef DTR
     bool SleepMode(bool mode);
+#endif
 
     MQTT_status_enum get_mqtt_status();
+
+    bool EchoMode(bool mode);
 
     double GetLatitude();
     double GetLongitude();

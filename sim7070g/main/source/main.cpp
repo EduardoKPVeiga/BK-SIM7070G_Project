@@ -4,67 +4,75 @@ static const char TAG[] = "Main";
 
 #include "../include/class/Gsm.h"
 
+Gsm *gsm = nullptr;
+
 extern "C"
 {
     void app_main(void)
     {
-        esp_log_level_set("*", ESP_LOG_NONE);
-        ESP_LOGI(TAG, "Application Init!");
+        esp_log_level_set("*", ESP_LOG_INFO);
+        uart2_task_init();
 
-        Gsm *gsm = new Gsm(client_id);
-        while (gsm->GetGsmErrorFlag() || gsm->GetMqttErrorFlag() || gsm->GetGpsErrorFlag())
-        {
-            if (gsm->GetGsmErrorFlag())
-                ESP_LOGE(TAG, "GSM initialization failed!");
-            else if (gsm->GetMqttErrorFlag())
-                ESP_LOGE(TAG, "MQTT initialization failed!");
-            else if (gsm->GetGpsErrorFlag())
-                ESP_LOGE(TAG, "GPS initialization failed!");
-            delete gsm;
-            ESP_LOGW(TAG, "SIM7070G shutdown.");
-            gsm = new Gsm(client_id, true);
-            gsm->get_mqtt_status();
-        }
-        unsigned char *msg = (unsigned char *)"Hello World!";
+        gsm = new Gsm(client_id);
 
-        if (gsm == nullptr)
-            ESP_LOGE(TAG, "\n\n\n\ngsm NULL.");
-
-        vTaskDelay(10 * DELAY_MSG);
-        while (!gsm->mqtt_sub("NrAAFfn/0/msg"))
-            vTaskDelay(DELAY_MSG);
-
-        // gsm->SleepMode(true);
-        // for (int i = 0; i < 120; i += 10)
-        // {
-        //     ESP_LOGI(TAG, "%d s", i);
-        //     vTaskDelay(DELAY_MSG * 10);
-        // }
-        // PWRKEYPulse();
-        // while (!gsm->SleepMode(false))
-        //     vTaskDelay(DELAY_ERROR_MSG);
-        // while (1)
-        // {
-        //     gsm->net_connected();
-        //     // GetSlowClockMode();
-        //     vTaskDelay(10 * DELAY_MSG);
-        // }
-
-        /*
         while (1)
         {
-            ESP_LOGI(TAG, "writing MQTT msg command...");
-            // ESP_LOGI(TAG, "Network active: %d", AppNetworkActiveReadCMD(0));
-            gsm->mqtt_publish(msg, (size_t)strlen((const char *)msg), 0);
-            vTaskDelay(50 * DELAY_ERROR_MSG);
-            // GPS test
-            // ESP_LOGI(TAG, "writing get GSM location...");
-            // if (gsm->GetLocation())
-            //     gsm->PrintCoord();
-            // else
-            //     ESP_LOGE(TAG, "failed.");
-            // vTaskDelay(DELAY_ERROR_MSG);
+            app_routine();
+            vTaskDelay(60000 / portTICK_PERIOD_MS);
         }
-        //*/
     }
+}
+
+void app_routine()
+{
+    ESP_LOGI(TAG, "Routine Init!");
+
+    if (gsm->GetGsmErrorFlag())
+    {
+        ESP_LOGE(TAG, "GSM initialization failed!");
+        delete gsm;
+        gsm = nullptr;
+    }
+    else if (gsm->GetMqttErrorFlag())
+    {
+        ESP_LOGE(TAG, "MQTT initialization failed!");
+        delete gsm;
+        gsm = nullptr;
+    }
+    else if (gsm->GetGpsErrorFlag())
+    {
+        ESP_LOGE(TAG, "GPS initialization failed!");
+        delete gsm;
+        gsm = nullptr;
+    }
+
+    unsigned char *msg = (unsigned char *)"Hello World!";
+
+    if (gsm == nullptr)
+    {
+        ESP_LOGE(TAG, "\n\n\n\ngsm NULL.");
+        gsm = new Gsm(client_id);
+    }
+
+    // gsm->mqtt_sub("NrAAFfn/0/msg");
+
+    PWRKEYPowerOff();
+    ESP_LOGI(TAG, "Power OFF.");
+
+    /*
+    while (1)
+    {
+        ESP_LOGI(TAG, "writing MQTT msg command...");
+        // ESP_LOGI(TAG, "Network active: %d", AppNetworkActiveReadCMD(0));
+        gsm->mqtt_publish(msg, (size_t)strlen((const char *)msg), 0);
+        vTaskDelay(50 * DELAY_ERROR_MSG);
+        // GPS test
+        // ESP_LOGI(TAG, "writing get GSM location...");
+        // if (gsm->GetLocation())
+        //     gsm->PrintCoord();
+        // else
+        //     ESP_LOGE(TAG, "failed.");
+        // vTaskDelay(DELAY_ERROR_MSG);
+    }
+    //*/
 }
