@@ -15,7 +15,7 @@ bool mqtt_publish_flag = false;
 static const char *TAG = "Uart";
 uint64_t time_last_msg = 0;
 
-char message_buff[MESSAGE_BUFF_MAX_SIZE] = {0};
+char message_buff[MESSAGE_BUFF_MAX_SIZE] = {'\0'};
 uint16_t message_pointer_pos = 0;
 
 // Setup UART buffered IO with event queue
@@ -62,24 +62,11 @@ void Clean_subscribe_data()
 bool SendCMD(int max_resp_time)
 {
     // ESP_LOGI(TAG, "message_pointer_pos: %d", message_pointer_pos);
-    char message_buff_log[message_pointer_pos] = {0};
+    char message_buff_log[message_pointer_pos + 1] = {'\0'};
 
-    bool has_str_end = false;
     for (int j = 0; j < message_pointer_pos; j++)
-    {
         message_buff_log[j] = message_buff[j];
-        if (message_buff_log[j] == '\0')
-            has_str_end = true;
-    }
-    if (!has_str_end)
-    {
-        char message_buff_log_with_str_end[message_pointer_pos + 1] = {'\0'};
-        for (int i = 0; i < message_pointer_pos; i++)
-            message_buff_log_with_str_end[i] = message_buff_log[i];
-        ESP_LOGI(TAG, "writing command - [%s]", message_buff_log_with_str_end);
-    }
-    else
-        ESP_LOGI(TAG, "writing command - [%s]", message_buff_log);
+    ESP_LOGI(TAG, "writing command - [%s]", message_buff_log);
 
     uart_write_bytes(uart_sim7070g, (const char *)message_buff, message_pointer_pos);
     uart_wait_tx_done(uart_sim7070g, 10);
@@ -87,6 +74,7 @@ bool SendCMD(int max_resp_time)
     // Wait for a response
     int attempts = (max_resp_time * 1000) / DELAY_SEND;
     char msg_received_LOG[MSG_RECEIVED_BUFF_SIZE] = {0};
+
     for (int i = 0; i < attempts; i++)
     {
         if (received || mqtt_publish_flag)
@@ -99,7 +87,7 @@ bool SendCMD(int max_resp_time)
                     msg_received_LOG[k] = msg_received[j];
             }
 
-            if (StrContainsSubstr(msg_received_LOG, RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)) >= 0)
+            if (StrContainsSubstr(msg_received, RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)) >= 0)
             {
                 ESP_LOGE(TAG, "Message Received - %s", msg_received_LOG);
                 received = false;

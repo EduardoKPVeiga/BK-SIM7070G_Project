@@ -9,7 +9,8 @@
 #include "esp_log.h"
 #include "uart_sim7070g.h"
 #include <stdlib.h>
+#include "../include/class/Gsm.h"
 
-void app_routine();
+void app_routine(Gsm *gsm);
 
 #endif

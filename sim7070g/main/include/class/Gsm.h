@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <string>
 #include <iostream>
-#include "Interface.h"
 #include "../sim7070g_commands.h"
 #include "../pins.h"
 #include "../uart_sim7070g.h"
@@ -15,6 +14,8 @@
 #define DELAY_MSG 1000 / portTICK_PERIOD_MS
 #define DELAY_SLEEP_MODE 100 / portTICK_PERIOD_MS
 #define ERROR_FLAG_MAX 6
+
+// #define GPS
 
 using namespace std;
 
@@ -27,37 +28,46 @@ enum MQTT_status_enum
     ERROR = 2
 };
 
-class Gsm : public Interface
+class Gsm
 {
 private:
     char serial_num[8] = {0};
 
     // Flags
-    bool gsm_error;
-    bool mqtt_error;
-    bool gps_error;
+    volatile bool gsm_error;
+    volatile bool mqtt_error;
+    volatile bool gps_error;
 
-    uint8_t gsm_error_cont;
-    uint8_t mqtt_error_cont;
-    uint8_t gps_error_cont;
+    volatile uint8_t gsm_error_cont;
+    volatile uint8_t mqtt_error_cont;
+    volatile uint8_t gps_error_cont;
 
-    void Initialize(bool flag);
+    bool GsmErrorFlagCount();
+    void GsmErrorFlagReset();
 
-    bool PDNManualActivation();
-    bool MQTTInit();
-    bool GNSSInit();
+    bool MqttErrorFlagCount();
+    void MqttErrorFlagReset();
 
-    bool MQTTConfig();
-
-    bool ErrorFlagCount(bool *flag, uint8_t *cont);
-    void ErrorFlagReset(bool *flag, uint8_t *cont);
+    bool GpsErrorFlagCount();
+    void GpsErrorFlagReset();
 
 public:
     Gsm();
-    Gsm(bool flag);
     Gsm(const char sn[8]);
-    Gsm(const char sn[8], bool flag);
     ~Gsm();
+
+    void Initialize();
+    bool PDNManualActivation();
+
+#ifdef MQTT
+    bool MQTTInit();
+#endif
+#ifdef GPS
+    bool GNSSInit();
+#endif
+#ifdef MQTT
+    bool MQTTConfig();
+#endif
 
     char *GetSerialNumber();
     void SetSerialNumber(const char sn[8]);
@@ -69,14 +79,16 @@ public:
     bool network_connect();
     bool net_connected();
 
+#ifdef MQTT
     int mqtt_connected();
     bool mqtt_connect();
     bool mqtt_sub(char *topic);
     bool mqtt_publish(char *topic, unsigned char *msg, size_t msg_length);
     bool mqtt_publish(unsigned char *msg, size_t msg_length, int slot);
-
+#endif
+#ifdef GPS
     bool GetLocation();
-
+#endif
 #ifdef PSM
     int GetPSWMode();
     bool PowerSavingMode(bool mode);
@@ -85,15 +97,19 @@ public:
     bool SleepMode(bool mode);
 #endif
 
+#ifdef MQTT
     MQTT_status_enum get_mqtt_status();
-
+#endif
     bool EchoMode(bool mode);
-
+#ifdef GPS
     double GetLatitude();
     double GetLongitude();
     double GetAltitude();
     int GetSatellitesInView();
     void PrintCoord();
+#endif
+    void PowerOn();
+    void PowerOff();
 };
 
 #endif
