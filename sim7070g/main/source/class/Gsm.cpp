@@ -188,13 +188,17 @@ bool Gsm::PDNManualActivation()
     }
     GsmErrorFlagReset();
 
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     // Before activation please use AT+CNCFG to set APN\user name\password if needed.
     ESP_LOGI(TAG, "writing PDP configure command...");
     while (!PDPConfigure(pdp, ip_type, apn_vivo, pdp_user, pdp_password))
     {
         ESP_LOGI(TAG, "writing PDP configure command...");
         if (GsmErrorFlagCount())
+        {
+            ESP_LOGW(TAG, "ERROR FLAG");
             return false;
+        }
         vTaskDelay(DELAY_ERROR_MSG);
     }
     PDPConfigureReadCMD();
@@ -420,19 +424,20 @@ bool Gsm::MQTTConfig()
 
 bool Gsm::GsmErrorFlagCount()
 {
-    if (gsm_error_cont == ERROR_FLAG_MAX)
+    if (this->gsm_error_cont == ERROR_FLAG_MAX)
     {
-        gsm_error = true;
+        this->gsm_error = true;
+        ESP_LOGE(TAG, "GSM initialization failed!");
         return true;
     }
-    gsm_error_cont++;
+    this->gsm_error_cont++;
     return false;
 }
 
 void Gsm::GsmErrorFlagReset()
 {
-    gsm_error = false;
-    gsm_error_cont = 0;
+    this->gsm_error = false;
+    this->gsm_error_cont = 0;
 }
 
 bool Gsm::MqttErrorFlagCount()

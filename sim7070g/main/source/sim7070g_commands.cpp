@@ -628,7 +628,9 @@ bool PDPConfigure(int pdpidx, const char ip_type, const char *apn, const char *u
     ValueDelimiter();
     WriteNumberIntoBuff(0);
     EndCMD();
-    return SendCMD();
+    if (SendCMD())
+        return true;
+    return false;
 }
 
 bool PDPConfigureReadCMD()

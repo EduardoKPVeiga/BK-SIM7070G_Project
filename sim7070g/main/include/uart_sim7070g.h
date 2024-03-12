@@ -16,7 +16,7 @@
 
 #define MESSAGE_BUFF_MAX_SIZE 559
 
-#define DELAY_SEND 10                          // ms
+#define DELAY_SEND 100                         // ms
 #define DELAY_RECEIVED 10 / portTICK_PERIOD_MS // ms
 
 extern char message_buff[MESSAGE_BUFF_MAX_SIZE];

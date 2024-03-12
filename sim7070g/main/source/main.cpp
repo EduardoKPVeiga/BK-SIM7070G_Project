@@ -10,43 +10,41 @@ extern "C"
     {
         esp_log_level_set("*", ESP_LOG_INFO);
         uart2_task_init();
-        Gsm *gsm = new Gsm("NrAAFfn");
-        // gsm->Initialize();
-
-        while (1)
-        {
-            app_routine(gsm);
-            vTaskDelay(100 / portTICK_PERIOD_MS);
-        }
+        xTaskCreatePinnedToCore(&app_routine, "app routine", 4 * MSG_RECEIVED_BUFF_SIZE, nullptr, 20, &tunnelTaskHandle, 0);
     }
 }
 
-void app_routine(Gsm *gsm)
+void app_routine(void *pvParameters)
 {
-    ESP_LOGI(TAG, "Routine Init!");
-    gsm->PowerOn();
+    ESP_LOGI(TAG, "App Routine init.");
+    Gsm *gsm = new Gsm("NrAAFfn");
+    ESP_LOGI(TAG, "Gsm object created.");
+    for (;;)
+    {
+        gsm->PowerOn();
 
-    if (gsm->GetGsmErrorFlag())
-        ESP_LOGE(TAG, "GSM initialization failed!");
-    else if (gsm->GetMqttErrorFlag())
-        ESP_LOGE(TAG, "MQTT initialization failed!");
-    else if (gsm->GetGpsErrorFlag())
-        ESP_LOGE(TAG, "GPS initialization failed!");
+        if (gsm->GetGsmErrorFlag())
+            ESP_LOGE(TAG, "GSM initialization failed!");
+        else if (gsm->GetMqttErrorFlag())
+            ESP_LOGE(TAG, "MQTT initialization failed!");
+        else if (gsm->GetGpsErrorFlag())
+            ESP_LOGE(TAG, "GPS initialization failed!");
 
-    // gsm->mqtt_sub("NrAAFfn/0/msg");
-    // gsm->mqtt_publish(msg, (size_t)strlen((const char *)msg), 0);
+        // gsm->mqtt_sub("NrAAFfn/0/msg");
+        // gsm->mqtt_publish(msg, (size_t)strlen((const char *)msg), 0);
 
-    // if (!gsm->GetGpsErrorFlag())
-    // {
-    //     for (int i = 0; i < 5; i++)
-    //     {
-    //         if (gsm->GetLocation())
-    //             gsm->PrintCoord();
-    //         else
-    //             ESP_LOGE(TAG, "Get location failed!");
-    //     }
-    // }
+        // if (!gsm->GetGpsErrorFlag())
+        // {
+        //     for (int i = 0; i < 5; i++)
+        //     {
+        //         if (gsm->GetLocation())
+        //             gsm->PrintCoord();
+        //         else
+        //             ESP_LOGE(TAG, "Get location failed!");
+        //     }
+        // }
 
-    gsm->PowerOff();
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+        gsm->PowerOff();
+        vTaskDelay(STACK_OF_DELAY);
+    }
 }

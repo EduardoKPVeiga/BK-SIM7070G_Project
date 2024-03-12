@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include "../include/class/Gsm.h"
 
-void app_routine(Gsm *gsm);
+#define STACK_OF_DELAY 100 / portTICK_PERIOD_MS
+
+void app_routine(void *pvParameters);
 
 #endif

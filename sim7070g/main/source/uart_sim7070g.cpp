@@ -87,7 +87,7 @@ bool SendCMD(int max_resp_time)
                     msg_received_LOG[k] = msg_received[j];
             }
 
-            if (StrContainsSubstr(msg_received, RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)) >= 0)
+            if (StrContainsSubstr(&(msg_received[begin_msg_received]), RESP_ERROR, msg_received_size, SIZE(RESP_ERROR)) >= 0)
             {
                 ESP_LOGE(TAG, "Message Received - %s", msg_received_LOG);
                 received = false;
