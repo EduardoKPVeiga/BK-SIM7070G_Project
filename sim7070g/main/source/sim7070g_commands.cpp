@@ -100,6 +100,7 @@ void WriteCmdIntoBuff(const char *cmd, CMD_action_enum action)
     else if (action == TEST)
         TestCMD();
 }
+
 // COMMANDS ==============================================================================
 // MQTT ----------------------------------------------------------------------------------
 bool SetMqttThreadSleepTime(Thread_action_enum action, uint16_t time)
@@ -628,9 +629,7 @@ bool PDPConfigure(int pdpidx, const char ip_type, const char *apn, const char *u
     ValueDelimiter();
     WriteNumberIntoBuff(0);
     EndCMD();
-    if (SendCMD())
-        return true;
-    return false;
+    return SendCMD();
 }
 
 bool PDPConfigureReadCMD()

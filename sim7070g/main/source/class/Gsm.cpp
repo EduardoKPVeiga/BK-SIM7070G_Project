@@ -99,6 +99,7 @@ void Gsm::Initialize()
         gsm_error = true;
         mqtt_error = true;
         gps_error = true;
+        return;
     }
 
     uint8_t count = 0;
@@ -118,8 +119,10 @@ void Gsm::Initialize()
     }
     ESP_LOGI(TAG, "Get local time stamp mode.\n");
 
+#ifdef GSM
     if (!PDNManualActivation())
         return;
+#endif
 #ifdef MQTT
     if (!MQTTInit())
         return;
@@ -151,6 +154,7 @@ void Gsm::Initialize()
     gps_error = false;
 }
 
+#ifdef GSM
 bool Gsm::PDNManualActivation()
 {
     // Disable RF
@@ -233,6 +237,7 @@ bool Gsm::PDNManualActivation()
     }
     return false;
 }
+#endif
 
 #ifdef MQTT
 bool Gsm::MQTTInit()
@@ -241,7 +246,7 @@ bool Gsm::MQTTInit()
     {
         while (!TestCMDMQTTParameters())
         {
-            if (MqttErrorFlagCountt())
+            if (MqttErrorFlagCount())
                 return false;
             vTaskDelay(DELAY_ERROR_MSG);
         }
@@ -300,7 +305,7 @@ bool Gsm::MQTTConfig()
     while (!SetMqttThreadSleepTime(action_th, time_th))
     {
         ESP_LOGI(TAG, "writing set MQTT thread sleep time...");
-        if (MqttErrorFlagCountt())
+        if (MqttErrorFlagCount())
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
@@ -310,7 +315,7 @@ bool Gsm::MQTTConfig()
     while (!SetClientID(client_id))
     {
         ESP_LOGI(TAG, "writing client ID...");
-        if (MqttErrorFlagCountt())
+        if (MqttErrorFlagCount())
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
@@ -320,7 +325,7 @@ bool Gsm::MQTTConfig()
     while (!SetUsername(username))
     {
         ESP_LOGI(TAG, "writing user name...");
-        if (MqttErrorFlagCountt())
+        if (MqttErrorFlagCount())
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
@@ -330,7 +335,7 @@ bool Gsm::MQTTConfig()
     while (!SetPassword(password))
     {
         ESP_LOGI(TAG, "writing password...");
-        if (MqttErrorFlagCountt())
+        if (MqttErrorFlagCount())
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
@@ -340,7 +345,7 @@ bool Gsm::MQTTConfig()
     while (!SetBrokerURL(broker_url, broker_port))
     {
         ESP_LOGI(TAG, "writing broker URL...");
-        if (MqttErrorFlagCountt())
+        if (MqttErrorFlagCount())
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
@@ -362,7 +367,7 @@ bool Gsm::MQTTConfig()
     while (!SetAsyncmode(async_mode))
     {
         ESP_LOGI(TAG, "writing set asyncmode command...");
-        if (MqttErrorFlagCountt())
+        if (MqttErrorFlagCount())
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
@@ -372,7 +377,7 @@ bool Gsm::MQTTConfig()
     while (!SetSubhex(sub_hex))
     {
         ESP_LOGI(TAG, "writing set data type...");
-        if (MqttErrorFlagCountt())
+        if (MqttErrorFlagCount())
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
@@ -382,7 +387,7 @@ bool Gsm::MQTTConfig()
     while (!SetCleanss(cleanss))
     {
         ESP_LOGI(TAG, "writing set cleanss...");
-        if (MqttErrorFlagCountt())
+        if (MqttErrorFlagCount())
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
@@ -392,7 +397,7 @@ bool Gsm::MQTTConfig()
     while (!SetMessageDetails(details))
     {
         ESP_LOGI(TAG, "writing message details command...");
-        if (MqttErrorFlagCountt())
+        if (MqttErrorFlagCount())
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
@@ -402,7 +407,7 @@ bool Gsm::MQTTConfig()
     while (!SetQOS(qos_level))
     {
         ESP_LOGI(TAG, "writing set QOS command");
-        if (MqttErrorFlagCountt())
+        if (MqttErrorFlagCount())
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
@@ -412,7 +417,7 @@ bool Gsm::MQTTConfig()
     while (!SetKeeptime(keeptime))
     {
         ESP_LOGI(TAG, "writing set KEEPTIME command...");
-        if (MqttErrorFlagCountt())
+        if (MqttErrorFlagCount())
             return false;
         vTaskDelay(DELAY_ERROR_MSG);
     }
@@ -427,7 +432,6 @@ bool Gsm::GsmErrorFlagCount()
     if (this->gsm_error_cont == ERROR_FLAG_MAX)
     {
         this->gsm_error = true;
-        ESP_LOGE(TAG, "GSM initialization failed!");
         return true;
     }
     this->gsm_error_cont++;
@@ -474,9 +478,11 @@ void Gsm::GpsErrorFlagReset()
     gps_error_cont = 0;
 }
 
+#ifdef GSM
 bool Gsm::network_connect()
 {
     // Activate network, Activate 0th PDP.
+    this->gsm_error_cont = 3;
     ESP_LOGI(TAG, "writing APP network active command...");
     while (!APPNetworkActive(pdp, ACTIVED))
     {
@@ -507,6 +513,7 @@ bool Gsm::net_connected()
 {
     return AppNetworkActiveReadCMD(pdp);
 }
+#endif
 
 #ifdef MQTT
 int Gsm::mqtt_connected()
@@ -874,6 +881,7 @@ void Gsm::PrintCoord()
 
 void Gsm::PowerOn()
 {
+    uart2_flush();
     PWRKEYPulse();
     ESP_LOGI(TAG, "Power ON.");
     Initialize();

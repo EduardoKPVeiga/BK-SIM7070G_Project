@@ -233,3 +233,9 @@ void uart2_task(void *pvParameters)
     }
     vTaskDelete(NULL);
 }
+
+void uart2_flush()
+{
+    uart_flush_input(uart_sim7070g);
+    Clean_msg_received();
+}

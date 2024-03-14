@@ -16,6 +16,15 @@
 #define ERROR_FLAG_MAX 6
 
 // #define GPS
+// #define GSM
+#define MQTT
+#ifdef MQTT
+#ifndef GSM
+#define GSM
+#endif
+#endif
+
+// #define GPS
 
 using namespace std;
 
@@ -57,8 +66,10 @@ public:
     ~Gsm();
 
     void Initialize();
-    bool PDNManualActivation();
 
+#ifdef GSM
+    bool PDNManualActivation();
+#endif
 #ifdef MQTT
     bool MQTTInit();
 #endif
@@ -76,8 +87,10 @@ public:
     bool GetMqttErrorFlag() { return this->mqtt_error; }
     bool GetGpsErrorFlag() { return this->gps_error; }
 
+#ifdef GSM
     bool network_connect();
     bool net_connected();
+#endif
 
 #ifdef MQTT
     int mqtt_connected();

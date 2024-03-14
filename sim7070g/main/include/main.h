@@ -3,16 +3,9 @@
 
 // SIM card number: (41)99292-0222
 
-#include <stdio.h>
 #include "freertos/FreeRTOS.h"
-#include "sim7070g_commands.h"
 #include "esp_log.h"
 #include "uart_sim7070g.h"
-#include <stdlib.h>
-#include "../include/class/Gsm.h"
-
-#define STACK_OF_DELAY 100 / portTICK_PERIOD_MS
-
-void app_routine(void *pvParameters);
+#include "gsm_routine.h"
 
 #endif
