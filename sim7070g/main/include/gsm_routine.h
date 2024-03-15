@@ -5,7 +5,7 @@
 #include "esp_log.h"
 #include "class/Gsm.h"
 
-#define ROUTINE_DELAY 10000 / portTICK_PERIOD_MS
+#define ROUTINE_DELAY 30000 / portTICK_PERIOD_MS
 
 void gsm_routine_task_init();
 

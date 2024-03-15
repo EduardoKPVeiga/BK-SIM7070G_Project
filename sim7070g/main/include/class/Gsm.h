@@ -15,9 +15,9 @@
 #define DELAY_SLEEP_MODE 100 / portTICK_PERIOD_MS
 #define ERROR_FLAG_MAX 6
 
-// #define GPS
+#define GPS
 // #define GSM
-#define MQTT
+// #define MQTT
 #ifdef MQTT
 #ifndef GSM
 #define GSM

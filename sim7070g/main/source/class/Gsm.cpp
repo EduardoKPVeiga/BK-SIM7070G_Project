@@ -885,6 +885,12 @@ void Gsm::PowerOn()
     PWRKEYPulse();
     ESP_LOGI(TAG, "Power ON.");
     Initialize();
+    if (this->GetGsmErrorFlag())
+        ESP_LOGE(TAG, "GSM initialization failed!");
+    else if (this->GetMqttErrorFlag())
+        ESP_LOGE(TAG, "MQTT initialization failed!");
+    else if (this->GetGpsErrorFlag())
+        ESP_LOGE(TAG, "GPS initialization failed!");
 }
 
 void Gsm::PowerOff()

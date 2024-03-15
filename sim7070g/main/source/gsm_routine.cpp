@@ -14,17 +14,12 @@ void app_routine(void *pvParameters)
     ESP_LOGI(TAG, "App Routine init.");
     Gsm *gsm = new Gsm("NrAAFfn");
     ESP_LOGI(TAG, "Gsm object created.");
+    int64_t timer = 0;
 
     for (;;)
     {
+        timer = esp_timer_get_time();
         gsm->PowerOn();
-
-        if (gsm->GetGsmErrorFlag())
-            ESP_LOGE(TAG, "GSM initialization failed!");
-        else if (gsm->GetMqttErrorFlag())
-            ESP_LOGE(TAG, "MQTT initialization failed!");
-        else if (gsm->GetGpsErrorFlag())
-            ESP_LOGE(TAG, "GPS initialization failed!");
 
 #ifdef MQTT
         if (!gsm->GetMqttErrorFlag())
@@ -42,14 +37,23 @@ void app_routine(void *pvParameters)
 #ifdef GPS
         if (!gsm->GetGpsErrorFlag())
         {
-            if (gsm->GetLocation())
-                gsm->PrintCoord();
-            else
-                ESP_LOGE(TAG, "Get location failed!");
+            int sat = 0;
+            while (sat <= 0)
+            {
+                if (gsm->GetLocation())
+                {
+                    gsm->PrintCoord();
+                    sat = gsm->GetSatellitesInView();
+                }
+                else
+                    ESP_LOGE(TAG, "Get location failed!");
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
+            }
         }
 #endif
 
         gsm->PowerOff();
+        ESP_LOGI(TAG, "Time: %f s", (esp_timer_get_time() - timer) / 1000000.f);
         vTaskDelay(ROUTINE_DELAY);
     }
 }
