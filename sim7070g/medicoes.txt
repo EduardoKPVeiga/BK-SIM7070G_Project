@@ -1,0 +1,62 @@
+Tempo de 1 ciclo (inicialização, envio de mensagem por MQTT e busca de GPS)
+
+19/03/2024
+~(15:30 -> 16:30)
+
+Erro p/ medicao: +- 0.5 s
+
+426 s - (chuva)
+95 s
+60 s
+54 s
+63 s
+60 s
+46 s
+54 s
+48 s
+41 s
+41 s
+40 s
+41 s
+47 s
+48 s
+42 s
+45 s
+42 s
+42 s
+52 s
+46 s
+46 s
+46 s
+43 s
+43 s
+44 s
+42 s
+49 s
+45 s
+42 s
+42 s
+42 s
+46 s
+61 s
+85 s
+43 s
+41 s
+46 s
+52 s
+49 s
+61 s
+46 s
+56 s
+47 s
+48 s
+49 s
+69 s
+66 s
+
+numero de medicoes: 48
+media: 57.958 s
+media ponderada: 50.348 s
+mediana: 46 s
+melhor caso: 40 s
+pior caso: 426 s

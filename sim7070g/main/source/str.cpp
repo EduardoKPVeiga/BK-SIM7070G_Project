@@ -124,6 +124,25 @@ char *DecimalToCharArray(uint16_t decimal)
     return decimal_array;
 }
 
+char *DecimalToStr(uint16_t decimal)
+{
+    if (decimal == 0)
+        return "0";
+    uint8_t digit = 0;
+    string decimal_s = "";
+    while (decimal != 0)
+    {
+        digit = decimal - ((uint16_t)(decimal / 10) * 10);
+        decimal_s += (char)(digit + '0');
+        decimal = (uint16_t)(decimal / 10);
+    }
+    string decimal_s_reverse = (string)strrev((char *)decimal_s.c_str());
+    decimal_s_reverse += '\0';
+    char *decimal_array = new char[decimal_s_reverse.length() + 1];
+    strcpy(decimal_array, decimal_s_reverse.c_str());
+    return decimal_array;
+}
+
 char *BintoCharArray(uint8_t bin)
 {
     uint8_t bin_aux = bin;

@@ -755,7 +755,6 @@ MQTT_status_enum Gsm::get_mqtt_status()
         index += begin_msg_received + SIZE(SMSTATE) + 2;
         if (index < MSG_RECEIVED_BUFF_SIZE)
         {
-            ESP_LOGI(TAG, "msg_received[%d]: %c", index, msg_received[index]);
             if (msg_received[index] == '0')
             {
                 ESP_LOGE(TAG, "Disconnect time: %d s", (int)((esp_timer_get_time() - connect_time) / 1000000));
@@ -879,18 +878,34 @@ void Gsm::PrintCoord()
 }
 #endif
 
-void Gsm::PowerOn()
+bool Gsm::PowerOn()
 {
     uart2_flush();
     PWRKEYPulse();
     ESP_LOGI(TAG, "Power ON.");
     Initialize();
+#ifdef GSM
     if (this->GetGsmErrorFlag())
+    {
         ESP_LOGE(TAG, "GSM initialization failed!");
-    else if (this->GetMqttErrorFlag())
+        return false;
+    }
+#endif
+#ifdef MQTT
+    if (this->GetMqttErrorFlag())
+    {
         ESP_LOGE(TAG, "MQTT initialization failed!");
-    else if (this->GetGpsErrorFlag())
+        return false;
+    }
+#endif
+#ifdef GPS
+    if (this->GetGpsErrorFlag())
+    {
         ESP_LOGE(TAG, "GPS initialization failed!");
+        return false;
+    }
+#endif
+    return true;
 }
 
 void Gsm::PowerOff()

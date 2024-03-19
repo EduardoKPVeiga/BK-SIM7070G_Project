@@ -26,6 +26,8 @@ char *strrev(char *str);
 
 char *DecimalToCharArray(uint16_t decimal);
 
+char *DecimalToStr(uint16_t decimal);
+
 char *BintoCharArray(uint8_t bin);
 
 #endif

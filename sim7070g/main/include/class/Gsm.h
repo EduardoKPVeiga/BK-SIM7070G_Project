@@ -16,8 +16,8 @@
 #define ERROR_FLAG_MAX 6
 
 #define GPS
-// #define GSM
-// #define MQTT
+//  #define GSM
+#define MQTT
 #ifdef MQTT
 #ifndef GSM
 #define GSM
@@ -121,7 +121,7 @@ public:
     int GetSatellitesInView();
     void PrintCoord();
 #endif
-    void PowerOn();
+    bool PowerOn();
     void PowerOff();
 };
 

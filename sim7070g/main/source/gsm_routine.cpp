@@ -2,7 +2,7 @@
 
 static const char TAG[] = "GSM_ROUTINE";
 
-unsigned char *msg = (unsigned char *)"Hello World!";
+unsigned char *msg = (unsigned char *)"Hello World! Testing GSM module...";
 
 void gsm_routine_task_init()
 {
@@ -15,28 +15,30 @@ void app_routine(void *pvParameters)
     Gsm *gsm = new Gsm("NrAAFfn");
     ESP_LOGI(TAG, "Gsm object created.");
     int64_t timer = 0;
+    int64_t time_spent = 0;
 
     for (;;)
     {
         timer = esp_timer_get_time();
-        gsm->PowerOn();
-
-#ifdef MQTT
-        if (!gsm->GetMqttErrorFlag())
+        if (gsm->PowerOn())
         {
+#ifdef MQTT
+            ESP_LOGI(TAG, "time_spent: %d s", (int)((time_spent / 1000000.f) + 0.5f));
+            char *time_msg = DecimalToStr((uint16_t)((time_spent / 1000000.f) + 0.5f));
+            ESP_LOGI(TAG, "time_msg: %s", time_msg);
             for (int i = 0; i < 3; i++)
             {
                 // gsm->mqtt_sub("NrAAFfn/0/msg");
-                if (gsm->mqtt_publish(msg, (size_t)strlen((const char *)msg), 0))
+                if (gsm->mqtt_publish((unsigned char *)time_msg, (size_t)strlen((const char *)time_msg), 0))
+                {
+                    // delete time_msg;
                     break;
-                vTaskDelay(2000 / portTICK_PERIOD_MS);
+                }
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
-        }
 #endif
 
 #ifdef GPS
-        if (!gsm->GetGpsErrorFlag())
-        {
             int sat = 0;
             while (sat <= 0)
             {
@@ -49,11 +51,12 @@ void app_routine(void *pvParameters)
                     ESP_LOGE(TAG, "Get location failed!");
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
-        }
 #endif
+        }
 
         gsm->PowerOff();
-        ESP_LOGI(TAG, "Time: %f s", (esp_timer_get_time() - timer) / 1000000.f);
+        time_spent = (esp_timer_get_time() - timer);
+        ESP_LOGI(TAG, "Time: %f s", time_spent / 1000000.f);
         vTaskDelay(ROUTINE_DELAY);
     }
 }
