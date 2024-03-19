@@ -16,6 +16,8 @@ void app_routine(void *pvParameters)
     ESP_LOGI(TAG, "Gsm object created.");
     int64_t timer = 0;
     int64_t time_spent = 0;
+    char time_msg[10] = {'\0'};
+    uint8_t msg_size = 0;
 
     for (;;)
     {
@@ -24,16 +26,13 @@ void app_routine(void *pvParameters)
         {
 #ifdef MQTT
             ESP_LOGI(TAG, "time_spent: %d s", (int)((time_spent / 1000000.f) + 0.5f));
-            char *time_msg = DecimalToStr((uint16_t)((time_spent / 1000000.f) + 0.5f));
+            msg_size = DecimalToStr((uint16_t)((time_spent / 1000000.f) + 0.5f), time_msg, 10);
             ESP_LOGI(TAG, "time_msg: %s", time_msg);
             for (int i = 0; i < 3; i++)
             {
                 // gsm->mqtt_sub("NrAAFfn/0/msg");
-                if (gsm->mqtt_publish((unsigned char *)time_msg, (size_t)strlen((const char *)time_msg), 0))
-                {
-                    // delete time_msg;
+                if (gsm->mqtt_publish((unsigned char *)time_msg, msg_size, 0))
                     break;
-                }
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
 #endif
