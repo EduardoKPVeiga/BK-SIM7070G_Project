@@ -2,7 +2,7 @@
 
 static const char TAG[] = "GSM_ROUTINE";
 
-unsigned char *msg = (unsigned char *)"Hello World! Testing GSM module...";
+unsigned char *msg = (unsigned char *)"Hello World! Testing GSM module batery...";
 
 void gsm_routine_task_init()
 {
@@ -12,7 +12,7 @@ void gsm_routine_task_init()
 void app_routine(void *pvParameters)
 {
     ESP_LOGI(TAG, "App Routine init.");
-    Gsm *gsm = new Gsm("NrAAFfn");
+    Gsm *gsm = new Gsm("2CqyHOW");
     ESP_LOGI(TAG, "Gsm object created.");
 
 #ifdef TIMER
@@ -41,13 +41,14 @@ void app_routine(void *pvParameters)
 #endif
             for (int i = 0; i < 3; i++)
             {
-// gsm->mqtt_sub("NrAAFfn/0/msg");
 #ifdef TIMER
 #ifdef PUBLISH_TIMER
                 if (gsm->mqtt_publish((unsigned char *)time_msg, msg_size, 0))
 #else
                 if (gsm->mqtt_publish((unsigned char *)msg, (size_t)strlen((const char *)msg), 0))
 #endif
+#else
+                if (gsm->mqtt_publish((unsigned char *)msg, (size_t)strlen((const char *)msg), 0))
 #endif
                     break;
                 vTaskDelay(1000 / portTICK_PERIOD_MS);

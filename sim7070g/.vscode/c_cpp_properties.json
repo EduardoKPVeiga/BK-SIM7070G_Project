@@ -1,26 +1,21 @@
 {
     "configurations": [
         {
-            "name": "ESP-IDF",
-            "compilerPath": "${config:idf.toolsPath}\\tools\\xtensa-esp32-elf\\esp-12.2.0_20230208\\xtensa-esp32-elf\\bin\\xtensa-esp32-elf-gcc.exe",
+            "name": "Win32",
             "includePath": [
-                "${config:idf.espIdfPath}/components/**",
-                "${config:idf.espIdfPathWin}/components/**",
-                "${config:idf.espAdfPath}/components/**",
-                "${config:idf.espAdfPathWin}/components/**",
                 "${workspaceFolder}/**",
-                "C:\\Users\\epont\\source\\repos\\BK-SIM7070G_Project\\sim7070g\\main\\include"
+                "C:/Users/epont/source/repos/BK-SIM7070G_Project/sim7070g/main/include"
             ],
-            "browse": {
-                "path": [
-                    "${config:idf.espIdfPath}/components",
-                    "${config:idf.espIdfPathWin}/components",
-                    "${config:idf.espAdfPath}/components/**",
-                    "${config:idf.espAdfPathWin}/components/**",
-                    "${workspaceFolder}"
-                ],
-                "limitSymbolsToIncludedHeaders": false
-            }
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.22000.0",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x86",
+            "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.36.32532/bin/Hostx86/x86/cl.exe"
         }
     ],
     "version": 4

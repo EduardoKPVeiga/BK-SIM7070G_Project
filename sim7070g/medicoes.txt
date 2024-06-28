@@ -54,9 +54,9 @@ Erro p/ medicao: +- 0.5 s
 69 s
 66 s
 
-numero de medicoes: 48
-media: 57.958 s
-media ponderada: 50.348 s
-mediana: 46 s
-melhor caso: 40 s
-pior caso: 426 s
+Numero de medicoes: 48
+Media: 57.958 s
+Media ponderada: 50.348 s
+Mediana: 46 s
+Melhor caso: 40 s
+Pior caso: 426 s

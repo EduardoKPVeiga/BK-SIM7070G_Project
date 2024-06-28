@@ -18,13 +18,12 @@
 // #define GPS
 // #define GSM
 #define MQTT
+
 #ifdef MQTT
 #ifndef GSM
 #define GSM
 #endif
 #endif
-
-// #define GPS
 
 using namespace std;
 
@@ -51,6 +50,8 @@ private:
     volatile uint8_t mqtt_error_cont;
     volatile uint8_t gps_error_cont;
 
+    void Initialize();
+
     bool GsmErrorFlagCount();
     void GsmErrorFlagReset();
 
@@ -65,7 +66,8 @@ public:
     Gsm(const char sn[8]);
     ~Gsm();
 
-    void Initialize();
+    bool PowerOn();
+    void PowerOff();
 
 #ifdef GSM
     bool PDNManualActivation();
@@ -121,8 +123,6 @@ public:
     int GetSatellitesInView();
     void PrintCoord();
 #endif
-    bool PowerOn();
-    void PowerOff();
 };
 
 #endif

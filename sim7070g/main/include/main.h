@@ -8,4 +8,6 @@
 #include "uart_sim7070g.h"
 #include "gsm_routine.h"
 
+#define DEBUG
+
 #endif

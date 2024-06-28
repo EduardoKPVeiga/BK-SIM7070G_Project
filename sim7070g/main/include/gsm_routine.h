@@ -5,9 +5,9 @@
 #include "esp_log.h"
 #include "class/Gsm.h"
 
-#define ROUTINE_DELAY 5 * 60000 / portTICK_PERIOD_MS
+#define ROUTINE_DELAY 5000 / portTICK_PERIOD_MS
 #define TIMER
-#define PUBLISH_TIMER
+// #define PUBLISH_TIMER
 
 void gsm_routine_task_init();
 
